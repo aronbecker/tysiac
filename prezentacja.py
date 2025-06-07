@@ -15,7 +15,7 @@ class Prezentacja(QWidget):
         self.layout = QVBoxLayout()
         self.label = QLabel()
         font = QFont()
-        font.setPointSize(24)  # Ustaw większy rozmiar czcionki dla prezentacji
+        font.setPointSize(48)  # Ustaw większy rozmiar czcionki dla prezentacji
         self.label.setFont(font)
         # Przycisk "Następny"
         self.nastepny_button = QPushButton("Następny")

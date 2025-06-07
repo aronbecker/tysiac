@@ -1,9 +1,13 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QLabel, 
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QLabel,
                              QLineEdit, QPushButton, QMessageBox)
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal # <--- MAKE SURE THIS IS IMPORTED
+
 from sqlite.zawodnik import Zawodnik
 
 class FormularzDodawaniaZawodnika(QWidget):
+    # This is where the signal needs to be defined: at the class level
+    player_added = pyqtSignal() # <--- THIS LINE IS CRUCIAL AND ITS PLACEMENT
+
     def __init__(self, conn, tabela_zawodnikow):
         super().__init__()
         self.setWindowTitle("Dodaj Zawodnika")
@@ -28,7 +32,7 @@ class FormularzDodawaniaZawodnika(QWidget):
         form_layout.addRow(self.lastname_label, self.lastname_input)
         form_layout.addRow(self.points_label, self.points_input)
         form_layout.addRow(self.kolejnosc_label, self.kolejnosc_input)
-        
+
         self.layout.addLayout(form_layout)
         self.layout.addWidget(self.dodaj_button)
         self.setLayout(self.layout)
@@ -44,27 +48,22 @@ class FormularzDodawaniaZawodnika(QWidget):
             return
 
         try:
-            points = int(points)  # Konwersja na int
+            points = int(points)
+            kolejnosc = int(kolejnosc)
         except ValueError:
-            QMessageBox.warning(self, "Błąd", "Punkty muszą być liczbą całkowitą.")
+            QMessageBox.warning(self, "Błąd", "Punkty i Kolejność muszą być liczbami całkowitymi.")
             return
 
-        # Zawodnik1 = Zawodnik(firstname, lastname, points, kolejnosc)
-        # print(Zawodnik1.firstname, Zawodnik1.lastname, Zawodnik1.points, Zawodnik1.kolejnosc)
-        # Zawodnik1.zapisz()
-        # self.tabela_zawodnikow.load_data()  # Wywołanie load_data w TabelaZawodnikow
-        # self.close()
         self.cursor = self.conn.cursor()
-        try
-            self.cursor.execute("INSERT INTO zawodnicy (firstname, lastname, points) VALUES (?, ?, ?)",
-                                (firstname, lastname, points))
+        try:
+            self.cursor.execute("INSERT INTO zawodnicy (firstname, lastname, points, kolejnosc) VALUES (?, ?, ?, ?)",
+                                (firstname, lastname, points, kolejnosc))
             self.conn.commit()
-            self.tabela_zawodnikow.load_data()  # Wywołanie load_data w TabelaZawodnikow
-            QMessageBox.information(self, "Sukces", "Zawodnik został dodany.")
-            self.player_added.emit() # Emit the signal after successful addition
+            self.tabela_zawodnikow.load_data()
 
-            self.close() # Zamknij formularz po dodaniu zawodnika
+            QMessageBox.information(self, "Sukces", "Zawodnik został dodany.")
+            self.player_added.emit() # <--- THIS EMITS THE SIGNAL
+            self.close()
         except Exception as e:
             QMessageBox.critical(self, "Błąd Bazy Danych", f"Wystąpił błąd podczas dodawania zawodnika: {e}")
-            self.conn.rollback() # Rollback changes if an error occurs
-
+            self.conn.rollback()

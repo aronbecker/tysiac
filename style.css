@@ -1,6 +1,7 @@
 /* General Application Styles */
 QWidget {
-    background-color: #1A2E4B; /* Dark blue from the poster's background */
+    background-color: #008AC6; /* Dark blue from the poster's background */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #008AC6, stop:1 #1B71B3); /* Linear gradient from top to bottom */
     color: #FFFFFF; /* White text for general elements */
     font-family: Arial, sans-serif; /* A clean, sans-serif font */
 }
@@ -22,7 +23,8 @@ QStackedWidget {
 /* Buttons */
 QPushButton {
     background-color: #FFD700; /* Golden yellow */
-    color: #1A2E4B; /* Dark blue for text on buttons */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFD700, stop:1 #F0BA0A);
+    color: #008AC6; /* Dark blue for text on buttons */
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
@@ -41,7 +43,7 @@ QPushButton:pressed {
 
 /* Menu */
 QMenu {
-    background-color: #1A2E4B; /* Dark blue for menu background */
+    background-color: #008AC6; /* Dark blue for menu background */
     color: #FFFFFF; /* White text for menu items */
     border: 1px solid #FFD700; /* Golden yellow border for menu */
     border-radius: 3px;
@@ -60,7 +62,7 @@ QMenu::item:selected {
 /* Line Edits (Input Fields) */
 QLineEdit {
     background-color: #FFFFFF; /* White background */
-    color: #1A2E4B; /* Dark blue text */
+    color: #008AC6; /* Dark blue text */
     border: 1px solid #CCCCCC; /* Light gray border */
     border-radius: 3px;
     padding: 5px;
@@ -73,7 +75,7 @@ QTableWidget {
     border: 1px solid #DDDDDD;
     gridline-color: #EEEEEE;
     selection-background-color: #FFD700; /* Golden yellow for selected rows */
-    selection-color: #1A2E4B; /* Dark blue text for selected rows */
+    selection-color: #008AC6; /* Dark blue text for selected rows */
 }
 
 QTableWidget::item {
@@ -82,11 +84,11 @@ QTableWidget::item {
 
 QTableWidget::item:selected {
     background-color: #FFD700; /* Golden yellow for selected items */
-    color: #1A2E4B; /* Dark blue text on selected items */
+    color: #008AC6; /* Dark blue text on selected items */
 }
 
 QHeaderView::section {
-    background-color: #1A2E4B; /* Dark blue for header sections */
+    background-color: #008AC6; /* Dark blue for header sections */
     color: #FFFFFF; /* White text for header sections */
     padding: 5px;
     border: 1px solid #3A4E6B; /* Slightly lighter blue border */
