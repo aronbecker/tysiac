@@ -1,0 +1,121 @@
+/* General Application Styles */
+QWidget {
+    background-color: #1A2E4B; /* Dark blue from the poster's background */
+    color: #FFFFFF; /* White text for general elements */
+    font-family: Arial, sans-serif; /* A clean, sans-serif font */
+}
+
+/* Header Labels (Turniej Name, Date) */
+QLabel {
+    color: #FFD700; /* Golden yellow from the poster */
+    font-weight: bold;
+    padding: 5px;
+}
+
+/* QStackedWidget background - for the main content area */
+QStackedWidget {
+    background-color: #F8F8F8; /* A light, neutral background for content tables/forms */
+    border-radius: 5px; /* Slightly rounded corners for content area */
+    margin: 10px; /* Add some margin around the stacked widget */
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #FFD700; /* Golden yellow */
+    color: #1A2E4B; /* Dark blue for text on buttons */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    min-width: 120px; /* Ensure buttons have a consistent minimum width */
+    margin: 5px; /* Add some space between buttons */
+}
+
+QPushButton:hover {
+    background-color: #FFC400; /* Slightly darker yellow on hover */
+}
+
+QPushButton:pressed {
+    background-color: #E6B800; /* Even darker yellow when pressed */
+}
+
+/* Menu */
+QMenu {
+    background-color: #1A2E4B; /* Dark blue for menu background */
+    color: #FFFFFF; /* White text for menu items */
+    border: 1px solid #FFD700; /* Golden yellow border for menu */
+    border-radius: 3px;
+}
+
+QMenu::item {
+    padding: 8px 25px 8px 20px; /* Adjust padding for menu items */
+}
+
+QMenu::item:selected {
+    background-color: #FFD700; /* Golden yellow background for selected item */
+    color: #1A2E4B; /* Dark blue text on selected item */
+    border-radius: 3px;
+}
+
+/* Line Edits (Input Fields) */
+QLineEdit {
+    background-color: #FFFFFF; /* White background */
+    color: #1A2E4B; /* Dark blue text */
+    border: 1px solid #CCCCCC; /* Light gray border */
+    border-radius: 3px;
+    padding: 5px;
+}
+
+/* Table Widgets (e.g., TabelaZawodnikow, TabelaRund) */
+QTableWidget {
+    background-color: #FFFFFF; /* White background for table content */
+    color: #1A2E4B; /* Dark blue text */
+    border: 1px solid #DDDDDD;
+    gridline-color: #EEEEEE;
+    selection-background-color: #FFD700; /* Golden yellow for selected rows */
+    selection-color: #1A2E4B; /* Dark blue text for selected rows */
+}
+
+QTableWidget::item {
+    padding: 5px;
+}
+
+QTableWidget::item:selected {
+    background-color: #FFD700; /* Golden yellow for selected items */
+    color: #1A2E4B; /* Dark blue text on selected items */
+}
+
+QHeaderView::section {
+    background-color: #1A2E4B; /* Dark blue for header sections */
+    color: #FFFFFF; /* White text for header sections */
+    padding: 5px;
+    border: 1px solid #3A4E6B; /* Slightly lighter blue border */
+    font-weight: bold;
+}
+
+/* Scroll Bars (Optional, for more complete theming) */
+QScrollBar:vertical, QScrollBar:horizontal {
+    border: none;
+    background: #E0E0E0;
+    width: 12px; /* For vertical */
+    height: 12px; /* For horizontal */
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #FFD700; /* Golden yellow handle */
+    border-radius: 5px;
+    min-height: 20px;
+    min-width: 20px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
