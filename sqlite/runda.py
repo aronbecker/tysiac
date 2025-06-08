@@ -1,19 +1,25 @@
 import sqlite3
 
 class Runda:
-    def __init__(self, name, priority, turniej_id):
+    # Dodajemy 'conn' do konstruktora
+    def __init__(self, name, priority, turniej_id, conn=None): # <--- DODANO conn
         self.name = name
         self.priority = priority
         self.turniej_id = turniej_id
+        self.conn = conn # <--- PRZECHOWUJEMY OBIEKT POŁĄCZENIA
 
     def zapisz(self):
-        conn = sqlite3.connect('my.db')  # Zmień nazwę bazy danych
-        cursor = conn.cursor()
+        if not self.conn: # <--- Sprawdzamy, czy połączenie zostało przekazane
+            raise ValueError("Database connection (conn) must be provided to Runda instance for saving.")
 
-        # Tworzenie tabeli, jeśli nie istnieje
+        cursor = self.conn.cursor() # <--- UŻYWAMY PRZEKAZANEGO POŁĄCZENIA
+
+        # Tworzenie tabeli, jeśli nie istnieje - ta logika powinna być GŁÓWNIE w MainWindow.stworz_baze_danych()
+        # Pozostawienie jej tutaj jako "awaryjne" jest ok, ale lepiej ją tam usunąć.
+        # Tak czy inaczej, używa self.conn.cursor(), więc jest ok.
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS runda (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name text,
                 priority INT,
                 turniej_id INT NOT NULL,
@@ -26,13 +32,15 @@ class Runda:
             VALUES (?, ?, ?)
         ''', (self.name, self.priority, self.turniej_id))
 
-        conn.commit()
-        conn.close()
+        self.conn.commit() # <--- UŻYWAMY PRZEKAZANEGO POŁĄCZENIA
+        # conn.close() # <--- WAŻNE: USUŃ TĘ LINIĘ! Połączenie zarządza MainWindow.
 
     @classmethod
-    def aktualizuj(cls, id, **kwargs):
-        conn = sqlite3.connect('my.db')  # Zmień nazwę bazy danych
-        cursor = conn.cursor()
+    # Dodajemy 'conn' jako parametr dla metod klasowych
+    def aktualizuj(cls, id, conn, **kwargs): # <--- DODANO conn
+        if not conn:
+            raise ValueError("Database connection (conn) must be provided for aktualizuj method.")
+        cursor = conn.cursor() # <--- UŻYWAMY PRZEKAZANEGO POŁĄCZENIA
 
         update_fields = []
         update_values = []
@@ -45,32 +53,32 @@ class Runda:
             update_query = f"UPDATE runda SET {', '.join(update_fields)} WHERE id = ?"
             update_values.append(id)
             cursor.execute(update_query, update_values)
-            conn.commit()
+            conn.commit() # <--- UŻYWAMY PRZEKAZANEGO POŁĄCZENIA
         else:
             print("Brak danych do aktualizacji.")
 
-        conn.close()
+        # conn.close() # <--- WAŻNE: USUŃ TĘ LINIĘ!
 
     @classmethod
-    def znajdz_runde(cls, id):
-        conn = sqlite3.connect('my.db')  # Zmień nazwę bazy danych
-        cursor = conn.cursor()
+    # Dodajemy 'conn' jako parametr dla metod klasowych
+    def znajdz_runde(cls, id, conn): # <--- DODANO conn
+        if not conn:
+            raise ValueError("Database connection (conn) must be provided for znajdz_runde method.")
+        cursor = conn.cursor() # <--- UŻYWAMY PRZEKAZANEGO POŁĄCZENIA
 
         cursor.execute("SELECT * FROM runda WHERE id = ?", (id,))
         data = cursor.fetchone()
-        conn.close()
+        # conn.close() # <--- WAŻNE: USUŃ TĘ LINIĘ!
 
         if data:
-            # Domyślnie zwracamy tuplę z danymi, ale można też stworzyć słownik lub obiekt Runda
-            # return cls(*data[1:]) # Jeśli chcesz zwrócić obiekt Runda (pomijając id)
-            return data  # Zwraca tuplę
+            return data
         else:
-            return None  # Zwraca None, jeśli runda nie istnieje
+            return None
 
 # Przykład użycia
-runda1 = Runda(name="Runda 1", priority=1, turniej_id=1)
-runda1.zapisz()
-znajdz_runde = Runda.znajdz_runde(1)
-print(znajdz_runde[1])
-
-Runda.aktualizuj(1, name="Runda pierwsza")
+# --- WAŻNE: USUŃ LUB ZAKOMENTUJ CAŁY PONIŻSZY BLOK KODU PRZYKŁADOWEGO ---
+# runda1 = Runda(name="Runda 1", priority=1, turniej_id=1)
+# runda1.zapisz()
+# znajdz_runde = Runda.znajdz_runde(1)
+# print(znajdz_runde[1])
+# Runda.aktualizuj(1, name="Runda pierwsza")

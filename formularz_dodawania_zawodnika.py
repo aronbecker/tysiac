@@ -1,18 +1,21 @@
+# formularz_dodawania_zawodnika.py
+import os # <--- ADD THIS IMPORT
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QLabel,
                              QLineEdit, QPushButton, QMessageBox)
 from PyQt5.QtCore import pyqtSignal # <--- MAKE SURE THIS IS IMPORTED
 
-from sqlite.zawodnik import Zawodnik
+from sqlite.zawodnik import Zawodnik # Assuming Zawodnik class is correctly modified to accept 'conn'
 
 class FormularzDodawaniaZawodnika(QWidget):
-    # This is where the signal needs to be defined: at the class level
-    player_added = pyqtSignal() # <--- THIS LINE IS CRUCIAL AND ITS PLACEMENT
+    player_added = pyqtSignal()
 
-    def __init__(self, conn, tabela_zawodnikow):
+    # ADD bundle_dir to __init__ signature
+    def __init__(self, conn, tabela_zawodnikow, bundle_dir): # <--- ADDED bundle_dir here!
         super().__init__()
         self.setWindowTitle("Dodaj Zawodnika")
         self.tabela_zawodnikow = tabela_zawodnikow
         self.conn = conn
+        self.bundle_dir = bundle_dir # <--- STORE bundle_dir here (for future use if needed)
         self.layout = QVBoxLayout()
 
         self.firstname_label = QLabel("Imię:")
@@ -40,16 +43,16 @@ class FormularzDodawaniaZawodnika(QWidget):
     def dodaj_zawodnika(self):
         firstname = self.firstname_input.text()
         lastname = self.lastname_input.text()
-        points = self.points_input.text()
-        kolejnosc = self.kolejnosc_input.text()
+        points_text = self.points_input.text() # Get as text first
+        kolejnosc_text = self.kolejnosc_input.text() # Get as text first
 
-        if not firstname or not lastname or not points or not kolejnosc:
+        if not all([firstname, lastname, points_text, kolejnosc_text]): # Use all() for cleaner check
             QMessageBox.warning(self, "Błąd", "Wszystkie pola muszą być wypełnione.")
             return
 
         try:
-            points = int(points)
-            kolejnosc = int(kolejnosc)
+            points = int(points_text) # Convert after initial check
+            kolejnosc = int(kolejnosc_text) # Convert after initial check
         except ValueError:
             QMessageBox.warning(self, "Błąd", "Punkty i Kolejność muszą być liczbami całkowitymi.")
             return
@@ -58,12 +61,13 @@ class FormularzDodawaniaZawodnika(QWidget):
         try:
             self.cursor.execute("INSERT INTO zawodnicy (firstname, lastname, points, kolejnosc) VALUES (?, ?, ?, ?)",
                                 (firstname, lastname, points, kolejnosc))
-            self.conn.commit()
-            self.tabela_zawodnikow.load_data()
+            self.conn.commit() # This commit is correct and essential
+
+            self.tabela_zawodnikow.load_data() # This refreshes the main table, correctly using self.conn
 
             QMessageBox.information(self, "Sukces", "Zawodnik został dodany.")
-            self.player_added.emit() # <--- THIS EMITS THE SIGNAL
+            self.player_added.emit()
             self.close()
         except Exception as e:
             QMessageBox.critical(self, "Błąd Bazy Danych", f"Wystąpił błąd podczas dodawania zawodnika: {e}")
-            self.conn.rollback()
+            self.conn.rollback() # Correctly rolls back on error
