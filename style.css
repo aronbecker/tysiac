@@ -76,10 +76,12 @@ QTableWidget {
     gridline-color: #EEEEEE;
     selection-background-color: #FFD700; /* Golden yellow for selected rows */
     selection-color: #008AC6; /* Dark blue text for selected rows */
+    font-size: 32px;
 }
-
+/* Styl dla elementów w komórkach tabeli (QTableWidgetItem) - to jest najważniejsze dla tekstu w środku */
 QTableWidget::item {
-    padding: 5px;
+    padding-top: 5px;    /* Odstęp na górze komórki */
+    padding-bottom: 5px; /* Odstęp na dole komórki */
 }
 
 QTableWidget::item:selected {

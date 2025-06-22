@@ -1,8 +1,8 @@
-import os # <--- IMPORT OS
+import os
 from PyQt5.QtWidgets import (QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QPushButton, QMessageBox, QHeaderView,
                              QHBoxLayout, QLabel, QAbstractItemView)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont # Import QFont
 from PyQt5.QtCore import Qt
 
 from tabela_gier import TabelaGier
@@ -11,16 +11,14 @@ import random
 from datetime import date
 
 class TabelaRund(QWidget):
-    # ADD bundle_dir to __init__ signature
-    def __init__(self, conn, stacked_widget, turniej_id, bundle_dir): # <--- ADDED bundle_dir
+    def __init__(self, conn, stacked_widget, turniej_id, bundle_dir):
         super().__init__()
         self.setWindowTitle("Rundy Turniejowe")
         self.conn = conn
         self.stacked_widget = stacked_widget
         self.turniej_id = turniej_id
-        self.bundle_dir = bundle_dir # <--- STORE bundle_dir here
+        self.bundle_dir = bundle_dir
 
-        # Main layout for this widget
         self.main_layout = QVBoxLayout(self)
 
         # --- "SKOCKIE ASY" Label (consistent with TabelaZawodnikow) ---
@@ -31,15 +29,27 @@ class TabelaRund(QWidget):
 
         # --- Table Widget ---
         self.table = QTableWidget()
-        self.table.setColumnCount(8) # ID, Nazwa, Priorytet, Turniej ID, Szczegóły, Losuj, Wyczyść, Usuń
-        self.table.setHorizontalHeaderLabels(["ID", "Nazwa", "Priorytet", "Turniej ID", "Szczegóły", "Losuj", "Wyczyść", "Usuń"])
+        # Zmieniono liczbę kolumn z 8 na 6 (usunięto Priorytet i Turniej ID)
+        self.table.setColumnCount(6) 
+        # Zmieniono nagłówki - usunięto "Priorytet" i "Turniej ID"
+        self.table.setHorizontalHeaderLabels(["ID", "Nazwa", "Szczegóły", "Losuj", "Wyczyść", "Usuń"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers) # Make cells non-editable by default
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
-        # Crucial for column spreading: Set stretch mode for all horizontal header sections
+        # Zwiększenie czcionki wewnątrz tabeli
+        font = QFont()
+        font.setPointSize(12) # Ustaw rozmiar czcionki na np. 12
+        self.table.setFont(font)
+        
+        # Zwiększenie czcionki dla nagłówków kolumn
+        header_font = QFont()
+        header_font.setPointSize(12)
+        header_font.setBold(True)
+        self.table.horizontalHeader().setFont(header_font)
+
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        self.main_layout.addWidget(self.table) # Add table to main layout first
+        self.main_layout.addWidget(self.table)
 
         # --- "Dodaj rundę" Button ---
         self.dodaj_runde_button = QPushButton("Dodaj rundę")
@@ -52,50 +62,58 @@ class TabelaRund(QWidget):
 
     def load_data(self):
         cursor = self.conn.cursor()
-        cursor.execute("SELECT id, name, priority, turniej_id FROM runda WHERE turniej_id = ?", (self.turniej_id,))
+        # Zmieniono zapytanie SQL - wybieramy tylko ID i Nazwę (bo Priorytet i Turniej ID są usuwane)
+        # Nadal potrzebujemy turniej_id do WHERE, ale go nie wyświetlamy.
+        cursor.execute("SELECT id, name FROM runda WHERE turniej_id = ?", (self.turniej_id,))
         rundy = cursor.fetchall()
 
         self.table.setRowCount(len(rundy))
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(6) # Nadal 6 kolumn (bez ID, Nazwa, Szczegóły, Losuj, Wyczyść, Usuń)
 
-        self.table.setHorizontalHeaderLabels(["ID", "Nazwa", "Priorytet", "Turniej ID", "Szczegóły", "Losuj", "Wyczyść", "Usuń"])
+        # Nagłówki są już ustawione w __init__, nie trzeba ich tutaj powtarzać, chyba że są dynamiczne
+        # self.table.setHorizontalHeaderLabels(["ID", "Nazwa", "Szczegóły", "Losuj", "Wyczyść", "Usuń"])
 
-        for i, runda in enumerate(rundy):
-            for j in range(4):
-                item = QTableWidgetItem(str(runda[j]))
-                self.table.setItem(i, j, item)
+        for i, runda_data in enumerate(rundy):
+            # runda_data: (id, name)
+            # Kolumny w QTableWidget: [ID, Nazwa, Szczegóły, Losuj, Wyczyść, Usuń]
+            
+            runda_id = runda_data[0] # ID rundy
+            runda_name = runda_data[1] # Nazwa rundy
 
-            runda_id = runda[0]
+            # Wstawienie danych (ID i Nazwa)
+            self.table.setItem(i, 0, QTableWidgetItem(str(runda_id))) # Kolumna 0: ID
+            self.table.setItem(i, 1, QTableWidgetItem(str(runda_name))) # Kolumna 1: Nazwa
+
 
             # --- Create and style buttons for each cell ---
-
-            # Szczegóły Button (view games in this round)
+            # Indeksy kolumn dla przycisków również się zmieniają!
+            # Szczegóły Button (kolumna 2 w QTableWidget)
             szczegoly_button = QPushButton()
-            szczegoly_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "eye.png"))) # <--- FIXED PATH
+            szczegoly_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "eye.png")))
             szczegoly_button.setToolTip("Pokaż szczegóły (gry)")
             szczegoly_button.clicked.connect(lambda _, rid=runda_id: self.pokaz_szczegoly_rundy(rid))
-            self.table.setCellWidget(i, 4, szczegoly_button)
+            self.table.setCellWidget(i, 2, szczegoly_button) # Kolumna 2
 
-            # Losuj (Generate pairings for this round)
+            # Losuj (kolumna 3 w QTableWidget)
             losuj_button = QPushButton()
-            losuj_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "draw.png"))) # <--- FIXED PATH
+            losuj_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "draw.png")))
             losuj_button.setToolTip("Losuj gry w rundzie")
             losuj_button.clicked.connect(lambda _, rid=runda_id: self.losuj_gry(rid, self.turniej_id))
-            self.table.setCellWidget(i, 5, losuj_button)
+            self.table.setCellWidget(i, 3, losuj_button) # Kolumna 3
 
-            # Wyczyść (Clear games for this round)
+            # Wyczyść (kolumna 4 w QTableWidget)
             wyczysc_button = QPushButton()
-            wyczysc_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "clean.png"))) # <--- FIXED PATH
+            wyczysc_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "clean.png")))
             wyczysc_button.setToolTip("Wyczyść gry w rundzie")
             wyczysc_button.clicked.connect(lambda _, rid=runda_id: self.wyczysc_gry(rid))
-            self.table.setCellWidget(i, 6, wyczysc_button)
+            self.table.setCellWidget(i, 4, wyczysc_button) # Kolumna 4
 
-            # Usuń (Delete round)
+            # Usuń (kolumna 5 w QTableWidget)
             usun_button = QPushButton()
-            usun_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "trash.png"))) # <--- FIXED PATH
+            usun_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "trash.png")))
             usun_button.setToolTip("Usuń rundę")
             usun_button.clicked.connect(lambda _, rid=runda_id: self.usun_runde(rid))
-            self.table.setCellWidget(i, 7, usun_button)
+            self.table.setCellWidget(i, 5, usun_button) # Kolumna 5
 
             # Apply consistent styling to all cell buttons
             for button in [szczegoly_button, losuj_button, wyczysc_button, usun_button]:
@@ -181,9 +199,9 @@ class TabelaRund(QWidget):
             dzisiejsza_data = date.today().strftime("%Y-%m-%d")
             numer_stolika = 1
             games_to_insert = []
-
             while len(zawodnicy_available) >= 3:
-                if len(zawodnicy_available) >= 4 and (len(zawodnicy_available) % 3 != 0 or len(zawodnicy_available) >= 6):
+                if len(zawodnicy_available) == 4 or len(zawodnicy_available) == 8:
+                    print("B ", len(zawodnicy_available))
                     if numer_stolika <= liczba_stolow:
                         p1 = zawodnicy_available.pop(0)
                         p2 = zawodnicy_available.pop(0)
@@ -191,29 +209,50 @@ class TabelaRund(QWidget):
                         p4 = zawodnicy_available.pop(0)
                         games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, p4, 0, 0, 0, 0))
                         numer_stolika += 1
-                    else:
-                        if len(zawodnicy_available) >= 3:
-                            p1 = zawodnicy_available.pop(0)
-                            p2 = zawodnicy_available.pop(0)
-                            p3 = zawodnicy_available.pop(0)
-                            games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, None, 0, 0, 0))
-                            numer_stolika += 1
-                        else:
-                            break
-                elif len(zawodnicy_available) >= 3:
+                elif (len(zawodnicy_available) >= 3):
+                    print(len(zawodnicy_available))
                     if numer_stolika <= liczba_stolow:
                         p1 = zawodnicy_available.pop(0)
                         p2 = zawodnicy_available.pop(0)
                         p3 = zawodnicy_available.pop(0)
-                        games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, None, 0, 0, 0))
+                        games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, None, 0, 0, 0, None))
                         numer_stolika += 1
                     else:
                         break
+                # if len(zawodnicy_available) >= 4 and len(zawodnicy_available) % 3 != 0:
+                #     print("B ", len(zawodnicy_available))
+                #     if numer_stolika <= liczba_stolow:
+                #         p1 = zawodnicy_available.pop(0)
+                #         p2 = zawodnicy_available.pop(0)
+                #         p3 = zawodnicy_available.pop(0)
+                #         p4 = zawodnicy_available.pop(0)
+                #         games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, p4, 0, 0, 0, 0))
+                #         numer_stolika += 1
+                #     else:
+                #         if len(zawodnicy_available) >= 3:
+                #             p1 = zawodnicy_available.pop(0)
+                #             p2 = zawodnicy_available.pop(0)
+                #             p3 = zawodnicy_available.pop(0)
+                #             games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, None, 0, 0, 0, None))
+                #             numer_stolika += 1
+                #         else:
+                #             break
+                # elif len(zawodnicy_available) >= 3:
+                #     print(len(zawodnicy_available))
+                #     if numer_stolika <= liczba_stolow:
+                #         p1 = zawodnicy_available.pop(0)
+                #         p2 = zawodnicy_available.pop(0)
+                #         p3 = zawodnicy_available.pop(0)
+                #         games_to_insert.append((dzisiejsza_data, runda_id, turniej_id, numer_stolika, p1, p2, p3, None, 0, 0, 0, None))
+                #         numer_stolika += 1
+                #     else:
+                #         break
                 else:
                     break
-
+            print(games_to_insert)
             if games_to_insert:
                 for game in games_to_insert:
+                    
                     if len(game) == 12:
                         cursor.execute('''
                             INSERT INTO gra (data, runda_id, turniej_id, stol, zawodnik_1, zawodnik_2, zawodnik_3, zawodnik_4, wynik_1, wynik_2, wynik_3, wynik_4)
@@ -221,8 +260,8 @@ class TabelaRund(QWidget):
                         ''', game)
                     elif len(game) == 11:
                         cursor.execute('''
-                            INSERT INTO gra (data, runda_id, turniej_id, stol, zawodnik_1, zawodnik_2, zawodnik_3, wynik_1, wynik_2, wynik_3)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO gra (data, runda_id, turniej_id, stol, zawodnik_1, zawodnik_2, zawodnik_3, zawodnik_4, wynik_1, wynik_2, wynik_3, wynik_4)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', game)
                 self.conn.commit()
                 QMessageBox.information(self, "Sukces", "Gry zostały wylosowane.")

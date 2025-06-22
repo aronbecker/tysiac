@@ -5,7 +5,7 @@ a = Analysis(
     ['tysiac2.py'],
     pathex=[],
     binaries=[],
-    datas=[('style.css', '.'), ('logo.png', '.'), ('icons', 'icons')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

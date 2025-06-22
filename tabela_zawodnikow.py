@@ -1,9 +1,9 @@
-import os # <--- IMPORT OS
+import os
 from PyQt5.QtWidgets import (QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QPushButton, QMessageBox, QComboBox,
                              QHBoxLayout, QHeaderView, QAbstractItemView, QLabel, QLineEdit, QFileDialog)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt # Import Qt for alignment
+from PyQt5.QtGui import QIcon, QFont # Import QFont for font size
+from PyQt5.QtCore import Qt
 
 from formularz_edycji_zawodnika import FormularzEdycjiZawodnika
 from tabela_gier_zawodnika import TabelaGierZawodnika
@@ -12,59 +12,49 @@ import openpyxl
 import random
 
 class TabelaZawodnikow(QWidget):
-    # ADD bundle_dir to __init__ signature
-    def __init__(self, conn, turniej_id, stacked_widget, bundle_dir): # <--- ADDED bundle_dir
+    def __init__(self, conn, turniej_id, stacked_widget, bundle_dir):
         super().__init__()
         self.setWindowTitle("Lista Zawodników")
         self.stacked_widget = stacked_widget
         self.conn = conn
         self.turniej_id = turniej_id
-        self.bundle_dir = bundle_dir # <--- STORE bundle_dir here
+        self.bundle_dir = bundle_dir
 
-        # Main layout for this specific widget (TabelaZawodnikow)
         self.main_layout = QVBoxLayout(self)
 
-        # Removed the commented-out "SKOCKIE ASY" label for clarity since it's in MainWindow now.
-        # # --- "SKOCKIE ASY" Label (as seen in screenshot) ---
-        # self.skockie_asy_label = QLabel("SKOCKIE ASY")
-        # # Apply styling from your CSS if you want, or here directly
-        # self.skockie_asy_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #FFD700; margin-bottom: 10px;")
-        # self.skockie_asy_label.setAlignment(Qt.AlignCenter)
-        # self.main_layout.addWidget(self.skockie_asy_label)
-
-        # --- Filtering/Sorting Controls (Top Row below SKOCKIE ASY) ---
+        # --- Filtering/Sorting Controls (Top Row) ---
         self.filter_sort_layout = QHBoxLayout()
 
-        self.filter_id_label = QLabel("ID:")
-        self.filter_id_input = QLineEdit()
-        self.filter_id_input.setPlaceholderText("Filtruj po ID")
-        self.filter_id_input.textChanged.connect(self.load_data) # Live filter
+        # Zmieniono filtr z ID na Imię/Nazwisko, skoro ID nie jest wyświetlane
+        self.filter_name_label = QLabel("Filtruj po imieniu/nazwisku:")
+        self.filter_name_input = QLineEdit()
+        self.filter_name_input.setPlaceholderText("Wpisz imię lub nazwisko")
+        self.filter_name_input.textChanged.connect(self.load_data) # Live filter
 
         self.sort_column_combo = QComboBox()
-        self.sort_column_combo.addItems(["id", "firstname", "lastname", "points", "kolejnosc"])
-        self.sort_column_combo.currentIndexChanged.connect(self.load_data) # Re-load on sort change
+        # Usunięto 'id' z opcji sortowania, jeśli nie jest wyświetlane
+        self.sort_column_combo.addItems(["firstname", "lastname", "points", "kolejnosc"])
+        self.sort_column_combo.currentIndexChanged.connect(self.load_data)
 
-        self.sort_direction_combo = QComboBox() # Renamed to avoid conflict with sort_direction variable
+        self.sort_direction_combo = QComboBox()
         self.sort_direction_combo.addItems(["ASC", "DESC"])
-        self.sort_direction_combo.currentIndexChanged.connect(self.load_data) # Re-load on sort change
+        self.sort_direction_combo.currentIndexChanged.connect(self.load_data)
 
-        # Add widgets to sort_layout
-        self.filter_sort_layout.addWidget(self.filter_id_label)
-        self.filter_sort_layout.addWidget(self.filter_id_input)
-        self.filter_sort_layout.addStretch(1) # Pushes elements to the left
+        self.filter_sort_layout.addWidget(self.filter_name_label)
+        self.filter_sort_layout.addWidget(self.filter_name_input)
+        self.filter_sort_layout.addStretch(1)
         self.filter_sort_layout.addWidget(QLabel("Sortuj po:"))
         self.filter_sort_layout.addWidget(self.sort_column_combo)
         self.filter_sort_layout.addWidget(self.sort_direction_combo)
-        # Removed the separate "Sortuj" button as sorting will happen on combo box change
 
         # --- Przycisk Eksportu ---
         self.export_button = QPushButton("Eksportuj do XLSX")
         self.export_button.clicked.connect(self.export_to_xlsx)
         self.filter_sort_layout.addWidget(self.export_button)
-        self.main_layout.addLayout(self.filter_sort_layout) # Add this layout to the main layout
+        self.main_layout.addLayout(self.filter_sort_layout)
 
         # --- Action Buttons (Losuj, Ustaw, Oblicz) ---
-        self.action_buttons_layout = QHBoxLayout() # Use QHBoxLayout for horizontal buttons
+        self.action_buttons_layout = QHBoxLayout()
 
         self.losuj_kolejnosc_button = QPushButton("Losuj kolejność")
         self.losuj_kolejnosc_button.clicked.connect(self.losuj_kolejnosc)
@@ -78,36 +68,50 @@ class TabelaZawodnikow(QWidget):
         self.oblicz_wszystkich_button.clicked.connect(self.oblicz_punkty_wszystkich)
         self.action_buttons_layout.addWidget(self.oblicz_wszystkich_button)
 
-        self.main_layout.addLayout(self.action_buttons_layout) # Add this layout to the main layout
+        self.main_layout.addLayout(self.action_buttons_layout)
 
         # --- Table Widget ---
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
-        self.table.setHorizontalHeaderLabels(["ID", "Imię", "Nazwisko", "Punkty", "Kolejność", "Oblicz", "Szczegóły", "Usuń", "Edytuj"])
+        # Zmieniono liczbę kolumn z 9 na 8 (usunięto kolumnę ID)
+        self.table.setColumnCount(8) 
+        # Zmieniono nagłówki - usunięto "ID"
+        self.table.setHorizontalHeaderLabels(["Imię", "Nazwisko", "Punkty", "Kolejność", "Oblicz", "Szczegóły", "Usuń", "Edytuj"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers) # Make cells non-editable
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
+        # Zwiększenie czcionki wewnątrz tabeli
+        font = QFont()
+        font.setPointSize(12) # Ustaw rozmiar czcionki na np. 12 (możesz dostosować)
+        self.table.setFont(font)
+        
+        # Opcjonalnie: Zwiększenie czcionki dla nagłówków kolumn
+        header_font = QFont()
+        header_font.setPointSize(12) # Rozmiar czcionki nagłówków
+        header_font.setBold(True) # Pogrubienie
+        self.table.horizontalHeader().setFont(header_font)
+        
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.main_layout.addWidget(self.table) # Add the table to the main layout of this widget
+        self.main_layout.addWidget(self.table)
 
-        self.setLayout(self.main_layout) # Set the main_layout for the QWidget itself
+        self.setLayout(self.main_layout)
 
         self.load_data() # Initial data load
 
     def load_data(self):
         self.cursor = self.conn.cursor()
 
-        # Get sorting and filtering parameters
         sort_column = self.sort_column_combo.currentText()
         sort_direction = self.sort_direction_combo.currentText()
-        filter_id = self.filter_id_input.text().strip()
+        filter_text = self.filter_name_input.text().strip() # Tekst do filtrowania po imieniu/nazwisku
 
-        query = "SELECT id, firstname, lastname, points, kolejnosc FROM zawodnicy"
+        # Zmieniono zapytanie SQL - nie wybieramy ID
+        query = "SELECT id, firstname, lastname, points, kolejnosc FROM zawodnicy" # Nadal potrzebujemy ID do operacji (usuń, edytuj, oblicz)
         params = []
 
-        if filter_id:
-            query += " WHERE id = ?"
-            params.append(filter_id)
+        if filter_text:
+            query += " WHERE firstname LIKE ? OR lastname LIKE ?"
+            params.append(f"%{filter_text}%")
+            params.append(f"%{filter_text}%")
 
         query += f" ORDER BY {sort_column} {sort_direction}"
 
@@ -115,46 +119,51 @@ class TabelaZawodnikow(QWidget):
         data = self.cursor.fetchall()
 
         self.table.setRowCount(len(data))
-        self.table.setColumnCount(9)
+        # self.table.setColumnCount(8) # Usunięto ID, więc 8 kolumn (bez przycisków)
 
-        self.table.setHorizontalHeaderLabels(["ID", "Imię", "Nazwisko", "Punkty", "Kolejność", "Oblicz","Szczegóły","Usuń", "Edytuj"])
+        # Nagłówki kolumn w interfejsie użytkownika
+        # self.table.setHorizontalHeaderLabels(["Imię", "Nazwisko", "Punkty", "Kolejność", "Oblicz", "Szczegóły", "Usuń", "Edytuj"])
 
         # Populate table with data and buttons
         for row_index, row_data in enumerate(data):
-            # Data columns
-            for col_index in range(5):
-                item = QTableWidgetItem(str(row_data[col_index]))
-                self.table.setItem(row_index, col_index, item)
+            zawodnik_id = row_data[0] # ID zawodnika jest nadal pobierane, ale nie wyświetlane
 
-            zawodnik_id = row_data[0]
+            # Data columns (pamiętaj, że row_data[0] to ID, więc zaczynamy od row_data[1])
+            # Indeksy kolumn w tabeli (Qt) przesuwają się o 1 w lewo
+            # row_data: [id, firstname, lastname, points, kolejnosc]
+            # Qt Table: [firstname, lastname, points, kolejnosc, Oblicz, Szczegóły, Usuń, Edytuj]
+            self.table.setItem(row_index, 0, QTableWidgetItem(str(row_data[1]))) # Imię
+            self.table.setItem(row_index, 1, QTableWidgetItem(str(row_data[2]))) # Nazwisko
+            self.table.setItem(row_index, 2, QTableWidgetItem(str(row_data[3]))) # Punkty
+            self.table.setItem(row_index, 3, QTableWidgetItem(str(row_data[4]))) # Kolejność
 
-            # Button "Oblicz"
+            # Button "Oblicz" (kolumna 4 w QTableWidget)
             oblicz_button = QPushButton()
-            oblicz_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "calculator.png"))) # <--- FIXED PATH
+            oblicz_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "calculator.png")))
             oblicz_button.setToolTip("Oblicz punkty")
             oblicz_button.clicked.connect(lambda _, zid=zawodnik_id: self.oblicz_punkty(zid, self.turniej_id))
-            self.table.setCellWidget(row_index, 5, oblicz_button)
+            self.table.setCellWidget(row_index, 4, oblicz_button)
 
-            # Button "Szczegóły"
+            # Button "Szczegóły" (kolumna 5 w QTableWidget)
             szczegoly_button = QPushButton()
-            szczegoly_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "eye.png"))) # <--- FIXED PATH
+            szczegoly_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "eye.png")))
             szczegoly_button.setToolTip("Pokaż szczegóły")
             szczegoly_button.clicked.connect(lambda _, zid=zawodnik_id: self.pokaz_szczegoly_zawodnika(zid))
-            self.table.setCellWidget(row_index, 6, szczegoly_button)
+            self.table.setCellWidget(row_index, 5, szczegoly_button)
 
-            # Button "Usuń"
+            # Button "Usuń" (kolumna 6 w QTableWidget)
             usun_button = QPushButton()
-            usun_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "trash.png"))) # <--- FIXED PATH
+            usun_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "trash.png")))
             usun_button.setToolTip("Usuń zawodnika")
             usun_button.clicked.connect(lambda _, zid=zawodnik_id: self.usun_zawodnika(zid))
-            self.table.setCellWidget(row_index, 7, usun_button)
+            self.table.setCellWidget(row_index, 6, usun_button)
 
-            # Button "Edytuj"
+            # Button "Edytuj" (kolumna 7 w QTableWidget)
             edytuj_button = QPushButton()
-            edytuj_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "pencil.png"))) # <--- FIXED PATH
+            edytuj_button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "pencil.png")))
             edytuj_button.setToolTip("Edytuj zawodnika")
             edytuj_button.clicked.connect(lambda _, zid=zawodnik_id: self.edytuj_zawodnika(zid))
-            self.table.setCellWidget(row_index, 8, edytuj_button)
+            self.table.setCellWidget(row_index, 7, edytuj_button)
 
             # Apply button styling (optional, but good for consistency)
             for button in [oblicz_button, szczegoly_button, usun_button, edytuj_button]:
@@ -176,32 +185,28 @@ class TabelaZawodnikow(QWidget):
                 """)
 
     def export_to_xlsx(self):
-        # Otwórz okno dialogowe zapisu pliku
         options = QFileDialog.Options()
         file_name, _ = QFileDialog.getSaveFileName(self, "Eksportuj listę zawodników", "lista_zawodnikow.xlsx",
                                                    "Pliki Excel (*.xlsx);;Wszystkie pliki (*)", options=options)
 
-        if file_name: # Jeśli użytkownik wybrał plik
+        if file_name:
             try:
                 workbook = openpyxl.Workbook()
                 sheet = workbook.active
                 sheet.title = "Lista Zawodników"
 
-                # Dodaj nagłówki kolumn
                 headers = []
                 for col in range(self.table.columnCount()):
                     header_item = self.table.horizontalHeaderItem(col)
                     if header_item is not None:
                         headers.append(header_item.text())
                     else:
-                        headers.append(f"Kolumna {col+1}") # Fallback
+                        headers.append(f"Kolumna {col+1}")
                 sheet.append(headers)
 
-                # Dodaj dane z tabeli
                 for row in range(self.table.rowCount()):
                     row_data = []
                     for col in range(self.table.columnCount()):
-                        # Sprawdź, czy komórka zawiera widget (przycisk)
                         if self.table.cellWidget(row, col) is None:
                             item = self.table.item(row, col)
                             if item is not None:
@@ -209,7 +214,7 @@ class TabelaZawodnikow(QWidget):
                             else:
                                 row_data.append("")
                         else:
-                            row_data.append("") # Nie eksportuj danych z komórek z widgetami (przyciskami)
+                            row_data.append("")
                     sheet.append(row_data)
 
                 workbook.save(file_name)
@@ -220,10 +225,9 @@ class TabelaZawodnikow(QWidget):
         else:
             QMessageBox.information(self, "Eksport anulowany", "Eksport danych został anulowany.")
 
-
-
-    def oblicz_punkty(self, zawodnik_id, turniej_id):
+    def oblicz_punktyOld(self, zawodnik_id, turniej_id):
         try:
+            # self.dodaj_indexy()
             cursor = self.conn.cursor()
 
             cursor.execute("""
@@ -245,6 +249,133 @@ class TabelaZawodnikow(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Błąd", f"Nie udało się obliczyć punktów: {e}")
+
+    def oblicz_punkty(self, zawodnik_id, turniej_id):
+        try:
+            cursor = self.conn.cursor()
+
+            # 1. Pobierz wszystkie gry, w których uczestniczył dany zawodnik w tym turnieju
+            # Wybieramy wszystkie kolumny zawodników i wyników
+            cursor.execute("""
+                SELECT
+                    zawodnik_1, wynik_1,
+                    zawodnik_2, wynik_2,
+                    zawodnik_3, wynik_3,
+                    zawodnik_4, wynik_4
+                FROM gra
+                WHERE
+                    turniej_id = ? AND
+                    (zawodnik_1 = ? OR zawodnik_2 = ? OR zawodnik_3 = ? OR zawodnik_4 = ?)
+            """, (turniej_id, zawodnik_id, zawodnik_id, zawodnik_id, zawodnik_id))
+            
+            gry_zawodnika = cursor.fetchall()
+
+            punkty = 0
+            if gry_zawodnika: # Jeśli zawodnik ma jakieś gry
+                # 2. Oblicz punkty w Pythonie
+                for gra in gry_zawodnika:
+                    # gra to krotka: (zawodnik_1, wynik_1, zawodnik_2, wynik_2, zawodnik_3, wynik_3, zawodnik_4, wynik_4)
+                    
+                    # Sprawdzamy, na której pozycji zawodnik grał w danej grze i dodajemy odpowiedni wynik
+                    if gra[0] == zawodnik_id: # Zawodnik 1
+                        punkty += (gra[1] if gra[1] is not None else 0)
+                    if gra[2] == zawodnik_id: # Zawodnik 2
+                        punkty += (gra[3] if gra[3] is not None else 0)
+                    if gra[4] == zawodnik_id: # Zawodnik 3
+                        punkty += (gra[5] if gra[5] is not None else 0)
+                    if gra[6] == zawodnik_id: # Zawodnik 4
+                        punkty += (gra[7] if gra[7] is not None else 0)
+            
+            # Wartości None są traktowane jako 0 punktów
+            punkty = int(punkty) # Upewnij się, że punkty są liczbą całkowitą
+
+            # 3. Zaktualizuj punkty w bazie danych
+            cursor.execute("UPDATE zawodnicy SET points = ? WHERE id = ?", (punkty, zawodnik_id))
+            self.conn.commit()
+            
+            # 4. Odśwież widok tabeli
+            self.load_data()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Nie udało się obliczyć punktów: {e}")
+
+# W klasie TabelaZawodnikow
+
+# ... (definicja oblicz_punkty dla pojedynczego zawodnika, jeśli nadal potrzebna, z nową implementacją pythona) ...
+
+    def oblicz_punkty_wszystkich(self):
+        try:
+            # self.dodaj_indexy() # Możesz wywołać to raz na starcie aplikacji, a nie tutaj w pętli
+            cursor = self.conn.cursor()
+
+            # 1. Pobierz ID wszystkich zawodników dla bieżącego turnieju
+            # Zakładam, że zawodnicy mają `turniej_id` lub są powiązani przez `turniej_zawodnicy`
+            # Jeśli zawodnicy są przypisani do turniejów przez tabelę `turniej_zawodnicy`:
+            # cursor.execute("SELECT z.id FROM zawodnicy AS z JOIN turniej_zawodnicy AS tz ON z.id = tz.zawodnik_id WHERE tz.turniej_id = ?", (self.turniej_id,))
+            cursor.execute("SELECT id FROM zawodnicy")
+            zawodnicy_ids = [row[0] for row in cursor.fetchall()]
+
+            # 2. Pobierz WSZYSTKIE gry dla tego turnieju, w których brał udział którykolwiek z tych zawodników
+            # Znacznie mniej zapytań do bazy danych
+            cursor.execute("""
+                SELECT
+                    zawodnik_1, wynik_1,
+                    zawodnik_2, wynik_2,
+                    zawodnik_3, wynik_3,
+                    zawodnik_4, wynik_4
+                FROM gra
+                WHERE turniej_id = ?
+                -- Nie filtrujemy tutaj po konkretnym zawodniku, bo potrzebujemy wszystkich gier turnieju
+            """, (self.turniej_id,))
+            
+            wszystkie_gry_w_turnieju = cursor.fetchall()
+
+            # Słownik do przechowywania obliczonych punktów dla każdego zawodnika
+            calculated_points = {zid: 0 for zid in zawodnicy_ids}
+
+            # 3. Oblicz punkty w Pythonie dla wszystkich zawodników jednocześnie
+            for gra in wszystkie_gry_w_turnieju:
+                players_in_game = {
+                    gra[0]: (gra[1] if gra[1] is not None else 0), # zawodnik_1: wynik_1
+                    gra[2]: (gra[3] if gra[3] is not None else 0), # zawodnik_2: wynik_2
+                    gra[4]: (gra[5] if gra[5] is not None else 0), # zawodnik_3: wynik_3
+                    gra[6]: (gra[7] if gra[7] is not None else 0)  # zawodnik_4: wynik_4
+                }
+                
+                for p_id, p_score in players_in_game.items():
+                    if p_id in calculated_points: # Upewnij się, że zawodnik jest z tego turnieju
+                        calculated_points[p_id] += p_score
+            
+            # 4. Przygotuj dane do aktualizacji bazy danych w operacji wsadowej
+            updates_to_db = []
+            for zid, points_sum in calculated_points.items():
+                updates_to_db.append((int(points_sum), zid)) # Upewnij się, że punkty są int
+
+            # 5. Wykonaj aktualizację wszystkich punktów w JEDNEJ operacji (executemany)
+            cursor.executemany("UPDATE zawodnicy SET points = ? WHERE id = ?", updates_to_db)
+            self.conn.commit() # JEDEN COMMIT
+
+            # 6. Odśwież UI TYLKO RAZ
+            self.load_data()
+            QMessageBox.information(self, "Sukces", "Punkty dla wszystkich zawodników zostały przeliczone.")
+
+        except Exception as e:
+            self.conn.rollback() # Wycofaj zmiany, jeśli coś pójdzie nie tak
+            QMessageBox.critical(self, "Błąd", f"Nie udało się obliczyć punktów dla wszystkich zawodników: {e}")
+
+
+    def dodaj_indexy(self):
+        """Dodaje indeksy do tabeli zawodników."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gra_turniej_id ON gra (turniej_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gra_zawodnik_1 ON gra (zawodnik_1)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gra_zawodnik_2 ON gra (zawodnik_2)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gra_zawodnik_3 ON gra (zawodnik_3)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gra_zawodnik_4 ON gra (zawodnik_4)")
+            self.conn.commit()
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Nie udało się dodać indeksów: {e}")
 
     def sort_zawodnicy(self):
         self.load_data()
@@ -287,7 +418,7 @@ class TabelaZawodnikow(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Błąd", f"Nie udało się ustawić kolejności: {e}")
 
-    def oblicz_punkty_wszystkich(self):
+    def oblicz_punkty_wszystkichOld(self):
         try:
             cursor = self.conn.cursor()
             cursor.execute("SELECT id FROM zawodnicy")
@@ -320,15 +451,15 @@ class TabelaZawodnikow(QWidget):
 
     def edytuj_zawodnika(self, zawodnik_id):
         """Otwiera formularz edycji zawodnika."""
-        # You need to pass bundle_dir to FormularzEdycjiZawodnika if it loads any resources
-        self.formularz_edycji = FormularzEdycjiZawodnika(self.conn, zawodnik_id, self)
+        # Assume FormularzEdycjiZawodnika does not need bundle_dir passed, or handles it internally
+        self.formularz_edycji = FormularzEdycjiZawodnika(self.conn, zawodnik_id, self, self.bundle_dir)
         self.stacked_widget.addWidget(self.formularz_edycji)
         self.stacked_widget.setCurrentWidget(self.formularz_edycji)
 
 
     def pokaz_szczegoly_zawodnika(self, zawodnik_id):
         """Otwiera widok wszystkich gier, w których uczestniczył zawodnik."""
-        # You need to pass bundle_dir to TabelaGierZawodnika if it loads any resources
+        # Assume TabelaGierZawodnika does not need bundle_dir passed, or handles it internally
         self.szczegoly_zawodnika_window = TabelaGierZawodnika(self.conn, zawodnik_id)
         self.stacked_widget.addWidget(self.szczegoly_zawodnika_window)
         self.stacked_widget.setCurrentWidget(self.szczegoly_zawodnika_window)
