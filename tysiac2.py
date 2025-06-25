@@ -28,7 +28,7 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Skockie Asy - Turniej Tysiąca z okazji Dnia Miasta i Gminy Skoki")
+        
 
         # --- Define self.bundle_dir here, at the start of MainWindow.__init__ ---
         if getattr(sys, 'frozen', False):
@@ -37,7 +37,7 @@ class MainWindow(QWidget):
             self.bundle_dir = os.path.dirname(os.path.abspath(__file__))
         # --- End of self.bundle_dir definition ---
 
-
+        self.setWindowTitle("Turniej Tysiąca")
         # Połączenie z bazą danych
         # Now use self.bundle_dir for db_path
         self.db_path = os.path.join(self.bundle_dir, 'my.db')
@@ -47,14 +47,14 @@ class MainWindow(QWidget):
 
         self.cursor.execute("SELECT name, begin_date, id FROM turniej LIMIT 1")
         turniej_data = self.cursor.fetchone()
-
+        
         if turniej_data:
             turniej_name, begin_date, turniej_id = turniej_data
         else:
             turniej_name = "Brak danych turnieju"
             begin_date = ""
             turniej_id = "1"
-
+        
         self.turniej_id = turniej_id
         # Pass self.bundle_dir when initializing Prezentacja
         self.prezentacja = Prezentacja(self.conn, self.bundle_dir) # <--- Pass self.bundle_dir here
@@ -82,7 +82,7 @@ class MainWindow(QWidget):
         self.main_app_header_container_layout = QVBoxLayout()
         self.main_app_header_container_layout.setAlignment(Qt.AlignCenter)
 
-        self.main_app_header_label = QLabel('SKOCKIE ASY - 1. Turniej Tysiąca z okazji Dnia Miasta i Gminy Skoki')
+        self.main_app_header_label = QLabel(turniej_name)
         self.main_app_header_label.setAlignment(Qt.AlignCenter)
         self.main_app_header_label.setFixedHeight(80)
         self.main_app_header_label.setStyleSheet("""
