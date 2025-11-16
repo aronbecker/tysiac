@@ -6,6 +6,8 @@ from PyQt5.QtGui import QIcon, QFont # Import QFont
 from PyQt5.QtCore import Qt
 
 from tabela_gier import TabelaGier
+from tabela_gier2 import TabelaGier2 
+from widok_zarzadzania_grami import WidokZarzadzaniaGrami
 from formularz_dodawania_rund import FormularzDodawaniaRundy
 import random
 from datetime import date
@@ -22,8 +24,8 @@ class TabelaRund(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         # --- "SKOCKIE ASY" Label (consistent with TabelaZawodnikow) ---
-        self.skockie_asy_label = QLabel("SKOCKIE ASY")
-        self.skockie_asy_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #FFD700; margin-bottom: 10px;")
+        self.skockie_asy_label = QLabel("CZTERY ASY 1000")
+        self.skockie_asy_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #EB414F; margin-bottom: 10px;")
         self.skockie_asy_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.skockie_asy_label)
 
@@ -119,10 +121,10 @@ class TabelaRund(QWidget):
             for button in [szczegoly_button, losuj_button, wyczysc_button, usun_button]:
                 button.setStyleSheet("""
                     QPushButton {
-                        background-color: #FFD700;
+                        background-color: #EB414F;
                         color: #1A2E4B;
                         border: none;
-                        padding: 5px;
+                        padding: 10px;
                         border-radius: 3px;
                         font-weight: bold;
                     }
@@ -135,10 +137,21 @@ class TabelaRund(QWidget):
                 """)
 
     def pokaz_szczegoly_rundy(self, runda_id):
-        # This also needs bundle_dir if TabelaGier uses external resources
-        self.szczegoly_rundy_window = TabelaGier(self.conn, runda_id, self.bundle_dir) # <-- TabelaGier might need bundle_dir too
-        self.stacked_widget.addWidget(self.szczegoly_rundy_window)
-        self.stacked_widget.setCurrentWidget(self.szczegoly_rundy_window)
+        # Tworzymy teraz widok ZARZĄDZANIA zamiast TabelaGier2
+        # Przekazujemy mu wszystkie potrzebne parametry:
+        # conn, runda_id, bundle_dir oraz BARDZO WAŻNE: self.stacked_widget
+        # (aby formularz aktualizacji wiedział, gdzie się pojawić)
+        
+        self.widok_gier_manager = WidokZarzadzaniaGrami(
+            self.conn, 
+            runda_id, 
+            self.bundle_dir, 
+            self.stacked_widget # Przekazujemy główny QStackedWidget
+        )
+        
+        # Dodajemy nowy widok menedżera do stosu i go pokazujemy
+        self.stacked_widget.addWidget(self.widok_gier_manager)
+        self.stacked_widget.setCurrentWidget(self.widok_gier_manager)
 
     def otworz_formularz_dodawania_rundy(self):
         # Pass self (reference to TabelaRund) as 'tabela_rund' parameter

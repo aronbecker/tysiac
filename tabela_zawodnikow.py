@@ -20,35 +20,53 @@ class TabelaZawodnikow(QWidget):
         self.turniej_id = turniej_id
         self.bundle_dir = bundle_dir
 
+        self.column_map = {
+            "Imię": "firstname",
+            "Nazwisko": "lastname",
+            "Punkty": "points",
+            "Kolejność": "kolejnosc"
+        }
+
         self.main_layout = QVBoxLayout(self)
 
         # --- Filtering/Sorting Controls (Top Row) ---
         self.filter_sort_layout = QHBoxLayout()
-
+        SMALL_FONT_STYLE = "color: #1A1A1A; font-size: 10px;"
         # Zmieniono filtr z ID na Imię/Nazwisko, skoro ID nie jest wyświetlane
         self.filter_name_label = QLabel("Filtruj po imieniu/nazwisku:")
+        self.filter_name_label.setStyleSheet(SMALL_FONT_STYLE)
         self.filter_name_input = QLineEdit()
         self.filter_name_input.setPlaceholderText("Wpisz imię lub nazwisko")
+        self.filter_name_input.setStyleSheet(SMALL_FONT_STYLE)
         self.filter_name_input.textChanged.connect(self.load_data) # Live filter
+        self.filter_name_input.setMaximumWidth(250)
 
         self.sort_column_combo = QComboBox()
         # Usunięto 'id' z opcji sortowania, jeśli nie jest wyświetlane
-        self.sort_column_combo.addItems(["firstname", "lastname", "points", "kolejnosc"])
+        # self.sort_column_combo.addItems(["firstname", "lastname", "points", "kolejnosc"])
+        self.sort_column_combo.addItems(self.column_map.keys())
+        self.sort_column_combo.setStyleSheet(SMALL_FONT_STYLE)
         self.sort_column_combo.currentIndexChanged.connect(self.load_data)
 
         self.sort_direction_combo = QComboBox()
         self.sort_direction_combo.addItems(["ASC", "DESC"])
         self.sort_direction_combo.currentIndexChanged.connect(self.load_data)
+        self.sort_direction_combo.setStyleSheet(SMALL_FONT_STYLE)
+
+        sort_label = QLabel("Sortuj po:")
+        sort_label.setStyleSheet(SMALL_FONT_STYLE)
 
         self.filter_sort_layout.addWidget(self.filter_name_label)
         self.filter_sort_layout.addWidget(self.filter_name_input)
         self.filter_sort_layout.addStretch(1)
-        self.filter_sort_layout.addWidget(QLabel("Sortuj po:"))
+        self.filter_sort_layout.addWidget(sort_label)
+
         self.filter_sort_layout.addWidget(self.sort_column_combo)
         self.filter_sort_layout.addWidget(self.sort_direction_combo)
 
         # --- Przycisk Eksportu ---
         self.export_button = QPushButton("Eksportuj do XLSX")
+        self.export_button.setStyleSheet(SMALL_FONT_STYLE + " padding: 5px;")
         self.export_button.clicked.connect(self.export_to_xlsx)
         self.filter_sort_layout.addWidget(self.export_button)
         self.main_layout.addLayout(self.filter_sort_layout)
@@ -81,12 +99,12 @@ class TabelaZawodnikow(QWidget):
 
         # Zwiększenie czcionki wewnątrz tabeli
         font = QFont()
-        font.setPointSize(12) # Ustaw rozmiar czcionki na np. 12 (możesz dostosować)
+        font.setPointSize(20) # Ustaw rozmiar czcionki na np. 12 (możesz dostosować)
         self.table.setFont(font)
         
         # Opcjonalnie: Zwiększenie czcionki dla nagłówków kolumn
         header_font = QFont()
-        header_font.setPointSize(12) # Rozmiar czcionki nagłówków
+        header_font.setPointSize(20) # Rozmiar czcionki nagłówków
         header_font.setBold(True) # Pogrubienie
         self.table.horizontalHeader().setFont(header_font)
         
@@ -100,7 +118,11 @@ class TabelaZawodnikow(QWidget):
     def load_data(self):
         self.cursor = self.conn.cursor()
 
-        sort_column = self.sort_column_combo.currentText()
+        # Użyj polskiej nazwy wybranej przez użytkownika
+        selected_polish_name = self.sort_column_combo.currentText()
+        # KLUCZOWA ZMIANA: Mapujemy polską nazwę na angielską nazwę kolumny w bazie danych
+        sort_column = self.column_map.get(selected_polish_name, "firstname") 
+        # Jeśli z jakiegoś powodu mapowanie się nie powiedzie, domyślnie sortuj po 'firstname'
         sort_direction = self.sort_direction_combo.currentText()
         filter_text = self.filter_name_input.text().strip() # Tekst do filtrowania po imieniu/nazwisku
 
@@ -169,7 +191,7 @@ class TabelaZawodnikow(QWidget):
             for button in [oblicz_button, szczegoly_button, usun_button, edytuj_button]:
                 button.setStyleSheet("""
                     QPushButton {
-                        background-color: #FFD700;
+                        background-color: #EB414F;
                         color: #1A2E4B;
                         border: none;
                         padding: 5px;

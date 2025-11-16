@@ -2,63 +2,92 @@ import os
 from PyQt5.QtWidgets import (QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QPushButton, QComboBox, QHBoxLayout,
                              QMessageBox, QHeaderView, QAbstractItemView)
-from PyQt5.QtGui import QIcon, QFont, QColor
+from PyQt5.QtGui import QIcon, QFont, QColor, QPalette
 from PyQt5.QtCore import Qt
 
 from formularz_aktualizacji_gry import FormularzAktualizacjiGry
 
-class TabelaGier(QWidget):
-    def __init__(self, conn, runda_id, bundle_dir, stacked_widget=None):
+class TabelaGier2(QWidget):
+    def __init__(self, conn, runda_id, bundle_dir, stacked_widget=None, parent_manager=None):
         super().__init__()
-        self.setWindowTitle(f"Lista Gier dla Rundy {runda_id}")
+        self.setWindowTitle(f"Lista Gier (Widok 2) dla Rundy {runda_id}")
         self.conn = conn
         self.runda_id = runda_id
         self.bundle_dir = bundle_dir
         self.stacked_widget = stacked_widget
+        self.parent_manager = parent_manager
 
-        self.table = QTableWidget()
+        # Główny layout pionowy
         self.layout = QVBoxLayout(self)
 
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        # <-- ZMIANA: Układ poziomy na TRZY tabele
+        self.content_layout = QHBoxLayout()
+
+        # <-- ZMIANA: Stworzenie TRZECH obiektów tabel
+        self.table_left = QTableWidget()
+        self.table_middle = QTableWidget() # NOWA TABELA ŚRODKOWA
+        self.table_right = QTableWidget()
+
+        # <-- ZMIANA: Konfiguracja wszystkich trzech tabel
+        self.setup_table(self.table_left)
+        self.setup_table(self.table_middle) # Konfiguracja środkowej
+        self.setup_table(self.table_right)
+
+        # <-- ZMIANA: Dodanie wszystkich trzech tabel do układu poziomego
+        self.content_layout.addWidget(self.table_left)
+        self.content_layout.addWidget(self.table_middle)
+        self.content_layout.addWidget(self.table_right)
+
+        # <-- ZMIANA: Dodanie układu poziomego do głównego layoutu
+        self.layout.addLayout(self.content_layout)
+
+        self.load_data()
+
+    def setup_table(self, table_widget):
+        """Funkcja pomocnicza do konfiguracji wszystkich tabel."""
+        table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table_widget.setEditTriggers(QTableWidget.NoEditTriggers)
         
         font = QFont()
         font.setPointSize(12) 
-        self.table.setFont(font)
+        table_widget.setFont(font)
         
         header_font = QFont()
         header_font.setPointSize(12)
         header_font.setBold(True)
-        self.table.horizontalHeader().setFont(header_font)
+        table_widget.horizontalHeader().setFont(header_font)
 
-        # Ustawiamy domyślne zachowanie na elastyczne, a potem nadpiszemy dla konkretnych kolumn
-        # To jest teraz mniej krytyczne, bo będziemy ręcznie sterować rozmiarem po wstawieniu danych.
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch) 
+        table_widget.verticalHeader().setVisible(False)
 
-        self.layout.addWidget(self.table)
-        self.load_data()
+        # Ustaw nagłówki i liczbę kolumn
+        column_headers = ["Stół", "Zawodnik", "Wynik", "Akcje"]
+        table_widget.setColumnCount(len(column_headers)) 
+        table_widget.setHorizontalHeaderLabels(column_headers)
 
-        self.setLayout(self.layout)
-
+        # Ustaw tryb 'Interactive' i domyślne szerokości
+        table_widget.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive) # Stół
+        table_widget.setColumnWidth(0, 80)
+        
+        table_widget.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive) # Zawodnik
+        table_widget.setColumnWidth(1, 250)
+        
+        table_widget.horizontalHeader().setSectionResizeMode(2, QHeaderView.Interactive) # Wynik
+        table_widget.setColumnWidth(2, 100)
+        
+        table_widget.horizontalHeader().setSectionResizeMode(3, QHeaderView.Interactive) # Akcje
+        table_widget.setColumnWidth(3, 120)
 
     def load_data(self):
+        """Pobiera dane i dzieli je na TRZY tabele."""
         cursor = self.conn.cursor()
-        # SQL zapytanie jest OK, pobiera wszystkie potrzebne dane w jednym wierszu na grę.
-        # Będziemy grupować te dane w Pythonie.
         cursor.execute('''
             SELECT
-                g.id,           -- [0] ID gry (do użytku wewnętrznego)
-                g.data,         -- [1] Data gry (do użytku wewnętrznego, np. aktualizacji)
-                g.stol,         -- [2] Stół (wyświetlana)
-                g.runda_id,     -- [3] Runda ID (do użytku wewnętrznego, nie wyświetlana)
-                z1.lastname || ' ' || z1.firstname AS zawodnik_1, -- [4]
-                z2.lastname || ' ' || z2.firstname AS zawodnik_2, -- [5]
-                z3.lastname || ' ' || z3.firstname AS zawodnik_3, -- [6]
-                z4.lastname || ' ' || z4.firstname AS zawodnik_4, -- [7]
-                g.wynik_1,      -- [8]
-                g.wynik_2,      -- [9]
-                g.wynik_3,      -- [10]
-                g.wynik_4       -- [11]
+                g.id, g.data, g.stol, g.runda_id,
+                z1.lastname || ' ' || z1.firstname AS zawodnik_1,
+                z2.lastname || ' ' || z2.firstname AS zawodnik_2,
+                z3.lastname || ' ' || z3.firstname AS zawodnik_3,
+                z4.lastname || ' ' || z4.firstname AS zawodnik_4,
+                g.wynik_1, g.wynik_2, g.wynik_3, g.wynik_4
             FROM gra AS g
             LEFT JOIN zawodnicy AS z1 ON g.zawodnik_1 = z1.id
             LEFT JOIN zawodnicy AS z2 ON g.zawodnik_2 = z2.id
@@ -67,156 +96,130 @@ class TabelaGier(QWidget):
             WHERE g.runda_id = ?
             ORDER BY g.stol ASC
         ''', (self.runda_id,))
-        gry_raw_data = cursor.fetchall() # Pobierz wszystkie wiersze
+        gry = cursor.fetchall()
 
-        # --- KROK 1: Przetwarzanie danych do pożądanego formatu grupującego po stolikach ---
-        # Będziemy budować słownik, gdzie kluczem jest ID stolika,
-        # a wartością jest lista słowników, każdy reprezentujący zawodnika i jego wynik.
-        # Dodatkowo, zapiszemy game_id dla każdego stolika, aby można było przekazać je do aktualizacji.
+        # Wyczyść wszystkie trzy tabele
+        self.table_left.setRowCount(0)
+        self.table_middle.setRowCount(0)
+        self.table_right.setRowCount(0)
+
+        # <-- ZMIANA: Logika podziału danych na TRZY listy
+        total_games = len(gry)
+        size_per_section = total_games // 3
+        remainder = total_games % 3
         
-        # Format danych wyjściowych:
-        # {
-        #   stol_id: {
-        #       'game_id': int,
-        #       'full_game_record': tuple, # Cały rekord z bazy danych
-        #       'players': [
-        #           {'name': 'Zawodnik 1', 'score': 'Wynik 1'},
-        #           {'name': 'Zawodnik 2', 'score': 'Wynik 2'},
-        #           # ... do 4 zawodników
-        #       ]
-        #   },
-        #   ...
-        # }
+        # Obliczanie indeksów podziału
+        midpoint_1 = size_per_section + (1 if remainder >= 1 else 0)
+        midpoint_2 = midpoint_1 + size_per_section + (1 if remainder == 2 else 0)
         
-        grouped_games_data = {}
-        for record in gry_raw_data:
-            game_id = record[0]
-            stol_id = record[2]
+        gry_left = gry[:midpoint_1]
+        gry_middle = gry[midpoint_1:midpoint_2]
+        gry_right = gry[midpoint_2:]
+
+        # <-- ZMIANA: Wypełnienie wszystkich trzech tabel
+        self.populate_table(self.table_left, gry_left)
+        self.populate_table(self.table_middle, gry_middle) 
+        self.populate_table(self.table_right, gry_right)
+
+    def populate_table(self, table_widget, gry_data):
+        """Wypełnia podaną tabelę podanymi danymi, stosując przeplatanie kolorów tła dla poszczególnych stołów."""
+        current_row_index = 0
+
+        # Definicja kolorów
+        ROW_COLOR_LIGHT = "white"
+        ROW_COLOR_DARK = "#D8D5D5" # Lekka szarość
+        
+        for gra_record in gry_data:
+            game_id = gra_record[0]
+            stol_number = gra_record[2]
             
-            if stol_id not in grouped_games_data:
-                grouped_games_data[stol_id] = {
-                    'game_id': game_id,
-                    'full_game_record': record, # Zachowaj cały rekord dla aktualizacji
-                    'players': []
-                }
+            # --- Wybór koloru tła na podstawie numeru stołu ---
+            background_color = ROW_COLOR_DARK if stol_number % 2 == 0 else ROW_COLOR_LIGHT
             
-            # Dodaj zawodników i ich wyniki do listy dla danego stolika
-            # Iterujemy od zawodnik_1 (indeks 4) do wynik_4 (indeks 11)
-            for i in range(4): # 4 zawodników
-                player_name = record[4 + i] # Zawodnik 1-4
-                player_score = record[8 + i] # Wynik 1-4
+            players_scores = []
+            player_indices = [4, 5, 6, 7] 
+            score_indices = [8, 9, 10, 11]
 
-                # Dodajemy tylko jeśli zawodnik istnieje (nie jest None)
-                if player_name:
-                    grouped_games_data[stol_id]['players'].append({
-                        'name': player_name,
-                        'score': str(player_score if player_score is not None else '')
-                    })
-        
-        # Posortuj stoliki po ich ID, aby zachować porządek
-        sorted_stols_data = sorted(grouped_games_data.items(), key=lambda item: item[0])
+            for p_idx, s_idx in zip(player_indices, score_indices):
+                player_name = gra_record[p_idx]
+                if player_name is not None:
+                    players_scores.append((player_name, gra_record[s_idx]))
 
-        # --- KROK 2: Ustawienie struktury QTableWidget ---
-        # Definiujemy kolumny, które chcemy WYŚWIETLAĆ (nazwy nagłówków)
-        column_headers_to_display = [
-            "Stół",
-            "Zawodnicy",
-            "Wyniki",
-            "Akcje"
-        ]
-        
-        self.table.setColumnCount(len(column_headers_to_display))
-        self.table.setHorizontalHeaderLabels(column_headers_to_display)
-        
-        # Oblicz całkowitą liczbę wierszy, uwzględniając wszystkich zawodników dla wszystkich stolików
-        total_rows = 0
-        for stol_id, stol_info in sorted_stols_data:
-            total_rows += len(stol_info['players']) # Liczba wierszy dla zawodników
-            # Opcjonalnie: total_rows += 1 # Dodaj 1 wiersz na separator, jeśli chcesz widoczne odstępy
-
-        self.table.setRowCount(total_rows)
-        stol_count = 0 
-
-        # --- KROK 3: Wypełnianie tabeli danymi i stosowanie setSpan ---
-        current_display_row = 0
-        for stol_id, stol_info in sorted_stols_data:
-            game_id = stol_info['game_id']
-            full_game_record = stol_info['full_game_record']
-            players_data = stol_info['players']
-            num_players = len(players_data)
-
+            num_players = len(players_scores)
             if num_players == 0:
-                continue # Pomiń stoliki bez zawodników (chociaż nasza logika powinna zapobiec temu)
+                continue
 
-            # Ustaw kolor tła dla bieżącego stolika
-            # Możesz wybrać kolory, które pasują do Twojej aplikacji
-            if stol_count % 2 == 0: # Co drugi stolik (parzysty index)
-                # Jasny szary, żeby nie odciągać uwagi od danych
-                background_color = QColor(192, 192, 192) 
-            else: # Co drugi stolik (nieparzysty index)
-                background_color = QColor(255, 255, 255) # Biały
-
-            # --- Kolumna 'Stół' (indeks 0) ---
-            self.table.setSpan(current_display_row, 0, num_players, 1) # Scal komórki pionowo
-            item_stol = QTableWidgetItem(str(stol_id))
-            item_stol.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter) # Wyśrodkuj tekst
-            self.table.setItem(current_display_row, 0, item_stol)
-            item_stol.setBackground(background_color) # Ustaw tło
-            # --- Kolumna 'Akcje' (indeks 3) ---
-            self.table.setSpan(current_display_row, 3, num_players, 1) # Scal komórki pionowo
+            table_widget.setRowCount(current_row_index + num_players)
             
+            # --- 1. Komórki scalone (Stół, Akcje) ---
+            
+            # Stół (Indeks 0)
+            stol_item = QTableWidgetItem(str(stol_number))
+            stol_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter) 
+            # Ustaw tło dla scalonej komórki STÓŁ
+            stol_item.setData(Qt.BackgroundRole, QColor(background_color))
+            
+            table_widget.setItem(current_row_index, 0, stol_item)
+            table_widget.setSpan(current_row_index, 0, num_players, 1)
+
+            # Akcje (Indeks 3)
             button = QPushButton()
-            button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "edit_score.png")))
-            button.setToolTip(f"Aktualizuj grę dla stołu {stol_id}")
-            # Przekaż game_id i cały rekord gry do funkcji aktualizuj_gre
-            button.clicked.connect(lambda _, gid=game_id, data_rec=full_game_record: self.aktualizuj_gre(gid, data_rec))
+            button.setIcon(QIcon(os.path.join(self.bundle_dir, "icons", "pencil_white.png")))
+            button.setToolTip("Aktualizuj grę")
             
+            # Widget kontenera dla przycisku
             button_widget = QWidget()
-            button_layout = QHBoxLayout(button_widget)
-            button_layout.addWidget(button)
-            button_layout.setAlignment(Qt.AlignCenter)
-            button_layout.setContentsMargins(0, 0, 0, 0)
-            self.table.setCellWidget(current_display_row, 3, button_widget)
-
-            # --- Kolumny 'Zawodnicy' (indeks 1) i 'Wyniki' (indeks 2) ---
-            for i, player in enumerate(players_data):
-                row_idx = current_display_row + i
-                item_zawodnik = QTableWidgetItem(player['name'])
-                item_wynik = QTableWidgetItem(player['score'])
-                
-                # Ustaw wyrównanie dla nazwisk i wyników (opcjonalnie)
-                item_zawodnik.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                item_wynik.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                item_zawodnik.setBackground(background_color) # Ustaw tło
-                item_wynik.setBackground(background_color) # Ustaw tło
-
-                self.table.setItem(row_idx, 1, item_zawodnik)
-                self.table.setItem(row_idx, 2, item_wynik)
-
-            current_display_row += num_players
-            stol_count += 1 
             
+            # Użycie QPalette do ustawienia koloru tła QWidget (zamiast problematycznego CSS)
+            palette = button_widget.palette()
+            palette.setColor(button_widget.backgroundRole(), QColor(background_color))
+            button_widget.setPalette(palette)
+            button_widget.setAutoFillBackground(True) # Wymagane, aby QPalette działała poprawnie
+            
+            parent_do_odswiezenia = self.parent_manager if self.parent_manager else self
+            button.clicked.connect(lambda _, current_gid=game_id, current_data=gra_record, pdp=parent_do_odswiezenia: self.aktualizuj_gre(current_gid, current_data, pdp))
 
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Interactive)
-        # Dostosuj szerokość kolumn do zawartości
-        self.table.resizeColumnsToContents()
+            button_layout = QVBoxLayout(button_widget)
+            button_layout.addStretch()
+            button_layout.addWidget(button)
+            button_layout.addStretch()
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            
+            table_widget.setCellWidget(current_row_index, 3, button_widget)
+            table_widget.setSpan(current_row_index, 3, num_players, 1)
 
-        self.table.horizontalHeader().setStretchLastSection(False) # Ważne, aby nie rozciągać tylko ostatniej
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch) # Rozciągnij kolumnę Zawodnicy
+            # --- 2. Wypełnianie danych (Zawodnik, Wynik) ---
+            
+            for i, (player_name, score) in enumerate(players_scores):
+                row_to_insert = current_row_index + i
+                
+                # Zawodnik (Indeks 1)
+                player_item = QTableWidgetItem(str(player_name))
+                player_item.setData(Qt.BackgroundRole, QColor(background_color))
+                table_widget.setItem(row_to_insert, 1, player_item)
+                
+                # Wynik (Indeks 2)
+                score_item = QTableWidgetItem(str(score if score is not None else ''))
+                score_item.setTextAlignment(Qt.AlignCenter) 
+                score_item.setData(Qt.BackgroundRole, QColor(background_color))
+                table_widget.setItem(row_to_insert, 2, score_item)
 
+            current_row_index += num_players
 
+        # Ustaw wysokość wierszy dla całej tabeli
+        for i in range(table_widget.rowCount()):
+            table_widget.setRowHeight(i, 35)
 
-    def aktualizuj_gre(self, gra_id, data_gry):
-        # Tutaj data_gry to cały rekord z bazy danych, w tym ID gry, data, runda_id itp.
+    def aktualizuj_gre(self, gra_id, data_gry, parent_do_odswiezenia=None):
+        """Ta funkcja pozostaje bez zmian."""
+        if parent_do_odswiezenia is None:
+            parent_do_odswiezenia = self.parent_manager if self.parent_manager else self
+        
         self.formularz_aktualizacji = FormularzAktualizacjiGry(self.conn, gra_id, data_gry,
-                                                             parent_table_widget=self,
-                                                             bundle_dir=self.bundle_dir)
+                                                               parent_table_widget=parent_do_odswiezenia,
+                                                               bundle_dir=self.bundle_dir)
 
         if self.stacked_widget:
-            # Aby uniknąć dodawania tego samego widżetu wiele razy, sprawdź, czy już go nie ma
             if self.stacked_widget.indexOf(self.formularz_aktualizacji) == -1:
                 self.stacked_widget.addWidget(self.formularz_aktualizacji)
             self.stacked_widget.setCurrentWidget(self.formularz_aktualizacji)

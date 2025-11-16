@@ -70,10 +70,10 @@ class Prezentacja(QWidget):
             zawodnik = zawodnicy[self.aktualny_indeks]
             miejsce = self.aktualny_indeks + 1
 
-            if miejsce > len(zawodnicy) - 5:
-                self.label.setText(f"{len(zawodnicy) - miejsce + 1}. {zawodnik[0]} {zawodnik[1]} - {zawodnik[2]} punktów")
-            else:
-                self.label.setText(f"{zawodnik[0]} {zawodnik[1]} - {zawodnik[2]} punktów")
+            # if miejsce > len(zawodnicy) - 5:
+            self.label.setText(f"{len(zawodnicy) - miejsce + 1}. {zawodnik[0]} {zawodnik[1]} - {zawodnik[2]} punktów")
+            # else:
+            #     self.label.setText(f"{zawodnik[0]} {zawodnik[1]} - {zawodnik[2]} punktów")
 
             self.aktualny_indeks += 1
         else:

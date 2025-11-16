@@ -18,17 +18,17 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from tabela_zawodnikow import TabelaZawodnikow
 from tabela_rund import TabelaRund
 from tabela_gier import TabelaGier
+from tabela_gier2 import TabelaGier2 
 from formularz_dodawania_zawodnika import FormularzDodawaniaZawodnika
 from formularz_dodawania_rund import FormularzDodawaniaRundy
 from formularz_dodawania_turnieju import FormularzDodawaniaTurnieju
 from prezentacja import Prezentacja
+from widok_zarzadzania_grami import WidokZarzadzaniaGrami
 
 class MainWindow(QWidget):
     # Removed bundle_dir from __init__ parameters, will define it inside
     def __init__(self):
         super().__init__()
-
-        
 
         # --- Define self.bundle_dir here, at the start of MainWindow.__init__ ---
         if getattr(sys, 'frozen', False):
@@ -57,7 +57,7 @@ class MainWindow(QWidget):
         
         self.turniej_id = turniej_id
         # Pass self.bundle_dir when initializing Prezentacja
-        self.prezentacja = Prezentacja(self.conn, self.bundle_dir) # <--- Pass self.bundle_dir here
+        self.prezentacja = Prezentacja(self.conn, self.bundle_dir) 
 
         self.main_layout = QVBoxLayout(self)
 
@@ -67,40 +67,46 @@ class MainWindow(QWidget):
 
         # Add Logo (use self.bundle_dir for logo path)
         self.logo_label = QLabel()
-        pixmap = QPixmap(os.path.join(self.bundle_dir, "logo.png")) # <--- Use self.bundle_dir here
+        # Zmieniono na "logo2.png", zgodnie z kodem
+        pixmap = QPixmap(os.path.join(self.bundle_dir, "logo2.png")) 
         if not pixmap.isNull():
             scaled_pixmap = pixmap.scaledToHeight(80, Qt.SmoothTransformation)
             self.logo_label.setPixmap(scaled_pixmap)
         else:
-            print("Warning: logo.png not found or could not be loaded from", os.path.join(self.bundle_dir, "logo.png"))
+            print("Warning: logo.png not found or could not be loaded from", os.path.join(self.bundle_dir, "logo2.png"))
             self.logo_label.setText("LOGO")
         top_header_section_layout.addWidget(self.logo_label)
 
-        top_header_section_layout.addStretch(1)
-
-        # ... (rest of main_app_header_label setup, it's already using self.bundle_dir if needed for styling, which it isn't here) ...
+        # ----------------------------------------------------
+        # --- ZMIENIONY BLOK: Nagłówek Turnieju (Centrum) ---
+        # ----------------------------------------------------
         self.main_app_header_container_layout = QVBoxLayout()
         self.main_app_header_container_layout.setAlignment(Qt.AlignCenter)
 
         self.main_app_header_label = QLabel(turniej_name)
         self.main_app_header_label.setAlignment(Qt.AlignCenter)
-        self.main_app_header_label.setFixedHeight(80)
+        self.main_app_header_label.setFixedHeight(50) # Dopasowanie do paska
         self.main_app_header_label.setStyleSheet("""
             QLabel {
-                background-color: #FFFFFF; /* Reverted to Golden Yellow for background based on original poster */
-                color: #1A2E4B;
+                background-color: transparent; /* Kluczowe: usuwa białe tło */
+                color: #EB414F; /* Czerwony kolor tekstu */
                 font-family: 'Verdana', sans-serif;
-                font-size: 20px;
+                font-size: 30px; /* Większa czcionka */
                 font-weight: bold;
-                padding: 10px 20px;
+                padding: 0px; /* Minimalny padding */
                 border-radius: 5px;
-                border: 2px solid #FFD700;
+                border: none; 
             }
         """)
+        # KLUCZOWA POPRAWKA: Dodanie etykiety do jej kontenera
         self.main_app_header_container_layout.addWidget(self.main_app_header_label)
-        top_header_section_layout.addLayout(self.main_app_header_container_layout)
 
-        top_header_section_layout.addStretch(1)
+        # Dodanie kontenera nagłówka do głównego układu HBox (z rozciąganiem 1)
+        top_header_section_layout.addLayout(self.main_app_header_container_layout, 1)
+
+        # top_header_section_layout.addStretch(1) # Usunięto nadmiarowe rozciąganie
+        # ----------------------------------------------------
+        # ----------------------------------------------------
 
         self.main_layout.addLayout(top_header_section_layout)
 
@@ -109,23 +115,21 @@ class MainWindow(QWidget):
         dynamic_info_layout.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         dynamic_info_layout.setContentsMargins(0, 0, 10, 5)
 
-        name_label = QLabel(f"Turniej: {turniej_name}")
-        date_label = QLabel(f"Data: {begin_date}")
-
-        name_label.setStyleSheet("color: #FFD700; font-size: 16px; font-weight: bold;")
-        date_label.setStyleSheet("color: #FFFFFF; font-size: 14px;")
+        # Etykieta daty
+        # ZMIANA 1: Zapisano 'date_label' jako 'self.date_label'
+        self.date_label = QLabel(f"Data: {begin_date}")
+        self.date_label.setStyleSheet("color: #1A1A1A; font-size: 10px;") # Ciemny tekst na jasnym tle
 
         dynamic_info_layout.addStretch(1)
-        dynamic_info_layout.addWidget(name_label)
-        dynamic_info_layout.addWidget(date_label)
+        dynamic_info_layout.addWidget(self.date_label) # Zaktualizowano na self.date_label
 
-        self.main_layout.addLayout(dynamic_info_layout)
+        # self.main_layout.addLayout(dynamic_info_layout)
 
 
         # --- Navigation Buttons ---
         navigation_layout = QHBoxLayout()
         navigation_layout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        navigation_layout.setContentsMargins(10, 5, 10, 10)
+        navigation_layout.setContentsMargins(1, 0, 1, 1)
 
         lista_zawodnikow_button = QPushButton("Lista zawodników")
         dodaj_zawodnika_button = QPushButton("Dodaj zawodnika")
@@ -163,11 +167,11 @@ class MainWindow(QWidget):
         self.main_layout.addWidget(self.stacked_widget, 1)
 
         # Utworzenie widoków (Pass self.bundle_dir to all relevant constructors)
-        self.tabela_zawodnikow = TabelaZawodnikow(self.conn, self.turniej_id, self.stacked_widget, self.bundle_dir) # <--- Pass here
-        self.tabela_rund = TabelaRund(self.conn, self.stacked_widget, self.turniej_id, self.bundle_dir) # <--- Pass here
+        self.tabela_zawodnikow = TabelaZawodnikow(self.conn, self.turniej_id, self.stacked_widget, self.bundle_dir) 
+        self.tabela_rund = TabelaRund(self.conn, self.stacked_widget, self.turniej_id, self.bundle_dir) 
         # Prezentacja is already done above
-        self.formularz_dodawania = FormularzDodawaniaZawodnika(self.conn, self.tabela_zawodnikow, self.bundle_dir) # If this loads resources, it also needs bundle_dir
-        self.formularz_dodawania_turnieju = FormularzDodawaniaTurnieju(self.conn, self.bundle_dir) # If this loads resources, it also needs bundle_dir
+        self.formularz_dodawania = FormularzDodawaniaZawodnika(self.conn, self.tabela_zawodnikow, self.bundle_dir) 
+        self.formularz_dodawania_turnieju = FormularzDodawaniaTurnieju(self.conn, self.bundle_dir) 
 
         self.formularz_dodawania.player_added.connect(self.show_players_list)
 
@@ -184,17 +188,34 @@ class MainWindow(QWidget):
         prezentacja_button.clicked.connect(lambda: self.stacked_widget.setCurrentWidget(self.prezentacja))
 
         # --- FOOTER ---
-        self.footer_label = QLabel("Created by Aron Becker")
+        self.footer_label = QLabel("@2025 Autor Aron Becker")
         self.footer_label.setAlignment(Qt.AlignCenter)
         self.footer_label.setStyleSheet("""
             QLabel {
-                color: #FFFFFF;
+                color: #1A1A1A; /* Ciemny tekst na jasnym tle */
                 font-size: 12px;
                 padding: 5px;
                 margin-top: 5px;
             }
         """)
         self.main_layout.addWidget(self.footer_label)
+
+    # ZMIANA 2: Dodano nową funkcję do odświeżania etykiet
+    def odswiez_dane_turnieju(self):
+        """Ta funkcja jest wywoływana przez sygnał z formularza edycji."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT name, begin_date FROM turniej WHERE id = ?", (self.turniej_id,))
+            turniej_data = cursor.fetchone()
+            if turniej_data:
+                # Zaktualizuj etykiety o nowe dane
+                self.main_app_header_label.setText(turniej_data[0])
+                self.date_label.setText(f"Data: {turniej_data[1]}")
+                print("Interfejs główny odświeżony.") # Wiadomość dla Ciebie
+            else:
+                print("Nie udało się odświeżyć danych (nie znaleziono turnieju).")
+        except Exception as e:
+            print(f"Błąd podczas odświeżania danych turnieju: {e}")
 
 
     def otworz_czyszczenie_danych(self):
@@ -203,6 +224,10 @@ class MainWindow(QWidget):
 
     def otworz_formularz_edycji_turnieju(self):
         self.formularz_edycji_turnieju = FormularzEdycjiTurnieju(self.conn)
+        
+        # ZMIANA 3: Podłączenie sygnału z formularza do funkcji odświeżającej
+        self.formularz_edycji_turnieju.zmiany_zapisane.connect(self.odswiez_dane_turnieju)
+        
         self.stacked_widget.addWidget(self.formularz_edycji_turnieju)
         self.stacked_widget.setCurrentWidget(self.formularz_edycji_turnieju)
 
@@ -287,6 +312,6 @@ if __name__ == "__main__":
     font = QFont()
     font.setPointSize(14)
     app.setFont(font)
-    window = MainWindow() # <--- No bundle_dir passed here anymore, it's defined inside
+    window = MainWindow() 
     window.show()
     sys.exit(app.exec_())

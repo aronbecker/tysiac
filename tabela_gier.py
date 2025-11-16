@@ -8,13 +8,14 @@ from PyQt5.QtCore import Qt
 from formularz_aktualizacji_gry import FormularzAktualizacjiGry
 
 class TabelaGier(QWidget):
-    def __init__(self, conn, runda_id, bundle_dir, stacked_widget=None):
+    def __init__(self, conn, runda_id, bundle_dir, stacked_widget=None, parent_manager=None):
         super().__init__()
         self.setWindowTitle(f"Lista Gier dla Rundy {runda_id}")
         self.conn = conn
         self.runda_id = runda_id
         self.bundle_dir = bundle_dir
         self.stacked_widget = stacked_widget
+        self.parent_manager = parent_manager
 
         self.table = QTableWidget()
         self.layout = QVBoxLayout(self)
@@ -135,9 +136,10 @@ class TabelaGier(QWidget):
 
 
     def aktualizuj_gre(self, gra_id, data_gry):
+        parent_do_odswiezenia = self.parent_manager if self.parent_manager else self
         # Tutaj data_gry to cały rekord z bazy danych, w tym ID gry, data, runda_id itp.
         self.formularz_aktualizacji = FormularzAktualizacjiGry(self.conn, gra_id, data_gry,
-                                                               parent_table_widget=self,
+                                                               parent_table_widget=parent_do_odswiezenia,
                                                                bundle_dir=self.bundle_dir)
 
         # Pokaż formularz w stacked_widget, jeśli jest dostępny, w przeciwnym razie jako oddzielne okno

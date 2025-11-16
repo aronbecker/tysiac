@@ -1,122 +1,121 @@
 /* General Application Styles */
 QWidget {
-    background-color: #008AC6; /* Dark blue from the poster's background */
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #008AC6, stop:1 #1B71B3); /* Linear gradient from top to bottom */
-    color: #FFFFFF; /* White text for general elements */
-    font-family: Arial, sans-serif; /* A clean, sans-serif font */
+    /* Jasne tło, biały lub bardzo jasny szary */
+    background-color: #F0F0F0; /* Bardzo jasny szary */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F9F9F9, stop:1 #EAEAEA);
+    color: #1A1A1A; /* Ciemny tekst */
+    font-family: Arial, sans-serif;
 }
 
-/* Header Labels (Turniej Name, Date) */
+/* Header Labels (Turniej Name, Date, etc.) */
 QLabel {
-    color: #FFD700; /* Golden yellow from the poster */
+    /* Kolor tekstu jest teraz definiowany lokalnie dla nagłówka, 
+       więc zostawiamy to domyślne. */
     font-weight: bold;
     padding: 5px;
 }
 
-/* QStackedWidget background - for the main content area */
+/* QStackedWidget background - dla głównego obszaru zawartości */
 QStackedWidget {
-    background-color: #F8F8F8; /* A light, neutral background for content tables/forms */
-    border-radius: 5px; /* Slightly rounded corners for content area */
-    margin: 10px; /* Add some margin around the stacked widget */
+    background-color: #FFFFFF; /* Czysta biel dla obszaru roboczego (jak karty) */
+    border-radius: 5px; 
+    margin: 10px; 
+    border: 1px solid #CCCCCC;
 }
 
 /* Buttons */
 QPushButton {
-    background-color: #FFD700; /* Golden yellow */
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFD700, stop:1 #F0BA0A);
-    color: #008AC6; /* Dark blue for text on buttons */
+    background-color: #1A1A1A; /* Czarny/Ciemny szary jako baza przycisków */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #333333, stop:1 #111111);
+    color: #FFFFFF; /* Biały tekst na ciemnym tle */
     border: none;
-    padding: 10px 20px;
+    padding: 5px 10px;
     border-radius: 5px;
     font-weight: bold;
-    min-width: 120px; /* Ensure buttons have a consistent minimum width */
-    margin: 5px; /* Add some space between buttons */
+    min-width: 120px;
+    margin: 2px;
+    font-size: 10px;
 }
 
 QPushButton:hover {
-    background-color: #FFC400; /* Slightly darker yellow on hover */
+    background-color: #EB414F; /* Czerwony akcent na hover */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #EB414F, stop:1 #D43A46);
 }
 
 QPushButton:pressed {
-    background-color: #E6B800; /* Even darker yellow when pressed */
+    background-color: #B5323C;
 }
 
 /* Menu */
 QMenu {
-    background-color: #008AC6; /* Dark blue for menu background */
-    color: #FFFFFF; /* White text for menu items */
-    border: 1px solid #FFD700; /* Golden yellow border for menu */
+    background-color: #FFFFFF; /* Białe tło menu */
+    color: #1A1A1A; /* Ciemny tekst menu */
+    border: 1px solid #EB414F; /* Czerwone obramowanie dla akcentu */
     border-radius: 3px;
 }
 
 QMenu::item {
-    padding: 8px 25px 8px 20px; /* Adjust padding for menu items */
+    padding: 8px 25px 8px 20px;
 }
 
 QMenu::item:selected {
-    background-color: #FFD700; /* Golden yellow background for selected item */
-    color: #1A2E4B; /* Dark blue text on selected item */
+    background-color: #EB414F; /* Czerwony dla zaznaczenia */
+    color: #FFFFFF; /* Biały tekst na czerwonym tle */
     border-radius: 3px;
 }
 
 /* Line Edits (Input Fields) */
 QLineEdit {
-    background-color: #FFFFFF; /* White background */
-    color: #008AC6; /* Dark blue text */
-    border: 1px solid #CCCCCC; /* Light gray border */
+    background-color: #FFFFFF;
+    color: #1A1A1A; 
+    border: 1px solid #AAAAAA; 
     border-radius: 3px;
     padding: 5px;
 }
 
 /* Table Widgets (e.g., TabelaZawodnikow, TabelaRund) */
 QTableWidget {
-    background-color: #FFFFFF; /* White background for table content */
-    color: #1A2E4B; /* Dark blue text */
+    background-color: #FFFFFF; 
+    color: #1A1A1A; /* Ciemny tekst */
     border: 1px solid #DDDDDD;
     gridline-color: #EEEEEE;
-    selection-background-color: #FFD700; /* Golden yellow for selected rows */
-    selection-color: #008AC6; /* Dark blue text for selected rows */
-    font-size: 32px;
+    selection-background-color: #EB414F; /* Czerwień dla zaznaczonych wierszy */
+    selection-color: #FFFFFF; /* Biały tekst na zaznaczonym tle */
+    font-size: 22px; 
 }
-/* Styl dla elementów w komórkach tabeli (QTableWidgetItem) - to jest najważniejsze dla tekstu w środku */
+/* Styl dla elementów w komórkach tabeli (QTableWidgetItem) */
 QTableWidget::item {
-    padding-top: 5px;    /* Odstęp na górze komórki */
-    padding-bottom: 5px; /* Odstęp na dole komórki */
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 QTableWidget::item:selected {
-    background-color: #FFD700; /* Golden yellow for selected items */
-    color: #008AC6; /* Dark blue text on selected items */
+    background-color: #EB414F; 
+    color: #FFFFFF; /* Biały tekst na jasnym czerwonym */
 }
 
 QHeaderView::section {
-    background-color: #008AC6; /* Dark blue for header sections */
-    color: #FFFFFF; /* White text for header sections */
-    padding: 5px;
-    border: 1px solid #3A4E6B; /* Slightly lighter blue border */
+    background-color: #1A1A1A; /* Ciemny szary/czarny dla nagłówków */
+    color: #FFFFFF; /* Biały tekst na czarnym nagłówku */
+    padding: 8px; 
+    border: 1px solid #444444; 
     font-weight: bold;
 }
 
-/* Scroll Bars (Optional, for more complete theming) */
+/* Scroll Bars */
 QScrollBar:vertical, QScrollBar:horizontal {
     border: none;
     background: #E0E0E0;
-    width: 12px; /* For vertical */
-    height: 12px; /* For horizontal */
+    width: 12px;
+    height: 12px;
     margin: 0px;
 }
 
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #FFD700; /* Golden yellow handle */
+    background: #AAAAAA; /* Szary uchwyt */
     border-radius: 5px;
     min-height: 20px;
     min-width: 20px;
-}
-
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
-    border: none;
-    background: none;
 }
 
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
