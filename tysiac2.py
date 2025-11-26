@@ -22,8 +22,10 @@ from tabela_gier2 import TabelaGier2
 from formularz_dodawania_zawodnika import FormularzDodawaniaZawodnika
 from formularz_dodawania_rund import FormularzDodawaniaRundy
 from formularz_dodawania_turnieju import FormularzDodawaniaTurnieju
+from formularz_obliczania_wynikow import FormularzObliczaniaWynikow
 from prezentacja import Prezentacja
 from widok_zarzadzania_grami import WidokZarzadzaniaGrami
+from tabela_wynikow import TabelaWynikow
 
 class MainWindow(QWidget):
     # Removed bundle_dir from __init__ parameters, will define it inside
@@ -135,6 +137,7 @@ class MainWindow(QWidget):
         dodaj_zawodnika_button = QPushButton("Dodaj zawodnika")
         rundy_button = QPushButton("Rundy")
         prezentacja_button = QPushButton("Prezentacja")
+        wyniki_button = QPushButton("Wyniki")
 
         menu_turniej = QMenu("Turniej", self)
         dodaj_turniej_action = QAction("Dodaj turniej", self)
@@ -156,6 +159,7 @@ class MainWindow(QWidget):
         navigation_layout.addWidget(dodaj_zawodnika_button)
         navigation_layout.addWidget(rundy_button)
         navigation_layout.addWidget(prezentacja_button)
+        navigation_layout.addWidget(wyniki_button)
         navigation_layout.addStretch(1)
         navigation_layout.addWidget(menu_button)
 
@@ -169,6 +173,10 @@ class MainWindow(QWidget):
         # Utworzenie widoków (Pass self.bundle_dir to all relevant constructors)
         self.tabela_zawodnikow = TabelaZawodnikow(self.conn, self.turniej_id, self.stacked_widget, self.bundle_dir) 
         self.tabela_rund = TabelaRund(self.conn, self.stacked_widget, self.turniej_id, self.bundle_dir) 
+        self.tabela_wynikow = TabelaWynikow(self.conn, self.stacked_widget, self.bundle_dir)
+        self.formularz_obliczania_wynikow = FormularzObliczaniaWynikow(self.conn, self.bundle_dir)
+        self.tabela_wynikow.open_calculate_form.connect(self.show_calculate_form)
+        self.formularz_obliczania_wynikow.results_calculated.connect(self.tabela_wynikow.load_data)
         # Prezentacja is already done above
         self.formularz_dodawania = FormularzDodawaniaZawodnika(self.conn, self.tabela_zawodnikow, self.bundle_dir) 
         self.formularz_dodawania_turnieju = FormularzDodawaniaTurnieju(self.conn, self.bundle_dir) 
@@ -178,6 +186,8 @@ class MainWindow(QWidget):
         # Dodanie widoków do QStackedWidget
         self.stacked_widget.addWidget(self.tabela_zawodnikow)
         self.stacked_widget.addWidget(self.tabela_rund)
+        self.stacked_widget.addWidget(self.tabela_wynikow)
+        self.stacked_widget.addWidget(self.formularz_obliczania_wynikow)
         self.stacked_widget.addWidget(self.formularz_dodawania)
         self.stacked_widget.addWidget(self.formularz_dodawania_turnieju)
         self.stacked_widget.addWidget(self.prezentacja)
@@ -186,6 +196,7 @@ class MainWindow(QWidget):
         dodaj_zawodnika_button.clicked.connect(lambda: self.stacked_widget.setCurrentWidget(self.formularz_dodawania))
         rundy_button.clicked.connect(lambda: self.stacked_widget.setCurrentWidget(self.tabela_rund))
         prezentacja_button.clicked.connect(lambda: self.stacked_widget.setCurrentWidget(self.prezentacja))
+        wyniki_button.clicked.connect(lambda: self.stacked_widget.setCurrentWidget(self.tabela_wynikow))
 
         # --- FOOTER ---
         self.footer_label = QLabel("@2025 Autor Aron Becker")
@@ -238,6 +249,9 @@ class MainWindow(QWidget):
 
     def show_players_list(self):
         self.stacked_widget.setCurrentWidget(self.tabela_zawodnikow)
+    
+    def show_calculate_form(self):
+        self.stacked_widget.setCurrentWidget(self.formularz_obliczania_wynikow)
 
     def stworz_baze_danych(self):
         cursor = self.conn.cursor()
@@ -285,6 +299,17 @@ class MainWindow(QWidget):
                 wynik_2 INT,
                 wynik_3 INT,
                 wynik_4 INT
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS wyniki (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                firstname TEXT NOT NULL,
+                lastname TEXT NOT NULL,
+                punkty INTEGER NOT NULL,
+                turnament INTEGER NOT NULL,
+                tdate DATE NOT NULL
             )
         ''')
 
